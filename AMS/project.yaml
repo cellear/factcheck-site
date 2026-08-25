@@ -1,0 +1,37 @@
+goal: A website that lets people Luke sends it to run a fact-check on pasted text, using the cellear/claude-fact-check-skill methodology, and get a permanent shareable result page.
+audience: Luke's own network — people he sends the URL to. Not a growth play.
+success: Luke sends the URL and invite word to people; they paste a claim, wait under three minutes, and forward a permalink. Luke never has to administer anything, and spend stops dead at the cap.
+constraints:
+  - Stack: static HTML + one serverless function + one key-value bucket. No Drupal, no Pantheon, nothing Luke administers. See DOC/architecture.md.
+  - Budget: $20/month hard cap on API spend; silent refusal when reached.
+  - Latency: a check may take up to three minutes; visitors wait, with a predicted countdown.
+  - Model: claude-sonnet-5 (Haiku 4.5 evaluated in the Sprint 1 spike).
+  - Access: shared invite word; results public to anyone with the link.
+  - Process: agents never push; Luke shapes the first commit; sprints are accepted by demo script or fix stories are added. See DOC/working-agreements.md.
+  - Documentation: anything in DOC/ or LEARNINGS/ is written by Lila; each agent writes its own handoff.
+team:
+  - persona: Luke
+    role: Product Owner
+    default_model: human
+  - persona: Archie
+    role: Site Architect
+    default_model: claude-opus-5
+  - persona: Nadia
+    role: Scrum Master
+    default_model: claude-sonnet-5
+  - persona: Cody
+    role: Coder
+    default_model: claude-sonnet-5
+  - persona: Sandy
+    role: Junior Engineer
+    default_model: claude-haiku-4-5
+  - persona: Lila
+    role: Librarian
+    default_model: claude-sonnet-5
+  - persona: Hannah
+    role: HR
+    default_model: claude-sonnet-5
+sprints: 4
+epics: off
+created: 2026-08-25
+schema_version: 1

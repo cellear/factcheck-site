@@ -1,0 +1,31 @@
+timestamp,event,entity_type,entity_id,from_state,to_state,actor,source,note
+2026-08-25T00:00:00Z,project_created,project,factcheck-site,,,Archie,wizard,"4 sprints, epics off"
+2026-08-25T00:00:00Z,sprint_created,sprint,sprint-1,,confirmed,Archie,wizard,It runs
+2026-08-25T00:00:00Z,story_created,story,S1-1,,backlog,Archie,wizard,Vendor SKILL.md with source commit recorded
+2026-08-25T00:00:00Z,story_created,story,S1-2,,backlog,Archie,wizard,"Spike script: one check, one call, measured"
+2026-08-25T00:00:00Z,story_created,story,S1-3,,backlog,Archie,wizard,Run the spike: 3–5 claims × Sonnet 5 × Haiku 4.5
+2026-08-25T00:00:00Z,story_created,story,S1-4,,backlog,Archie,wizard,Spike read-out
+2026-08-25T00:00:00Z,story_created,story,S1-5,,backlog,Archie,wizard,Decide report rendering from real output
+2026-08-25T00:00:00Z,story_created,story,S1-6,,backlog,Archie,wizard,Lila takes ownership of DOC
+2026-08-25T00:00:00Z,story_created,story,S1-R,,backlog,Archie,wizard,Retro and records
+2026-08-25T00:00:00Z,sprint_created,sprint,sprint-2,,planned,Archie,wizard,It's a website
+2026-08-25T00:00:00Z,story_created,story,S2-1,,backlog,Archie,wizard,Cloudflare project and the three-minute go/no-go
+2026-08-25T00:00:00Z,story_created,story,S2-2,,backlog,Archie,wizard,The function: POST /check
+2026-08-25T00:00:00Z,story_created,story,S2-3,,backlog,Archie,wizard,GET /r/:id
+2026-08-25T00:00:00Z,story_created,story,S2-4,,backlog,Archie,wizard,Form page with predicted countdown
+2026-08-25T00:00:00Z,story_created,story,S2-5,,backlog,Archie,wizard,Result page
+2026-08-25T00:00:00Z,story_created,story,S2-6,,backlog,Archie,wizard,Failure fixture
+2026-08-25T00:00:00Z,story_created,story,S2-R,,backlog,Archie,wizard,Retro and records
+2026-08-25T00:00:00Z,sprint_created,sprint,sprint-3,,planned,Archie,wizard,It's safe to send to people
+2026-08-25T00:00:00Z,story_created,story,S3-1,,backlog,Archie,wizard,Invite word
+2026-08-25T00:00:00Z,story_created,story,S3-2,,backlog,Archie,wizard,Spend meter and hard cap
+2026-08-25T00:00:00Z,story_created,story,S3-3,,backlog,Archie,wizard,Refusal handling
+2026-08-25T00:00:00Z,story_created,story,S3-4,,backlog,Archie,wizard,Search-tool error detection
+2026-08-25T00:00:00Z,story_created,story,S3-5,,backlog,Archie,wizard,Page copy
+2026-08-25T00:00:00Z,story_created,story,S3-6,,backlog,Archie,wizard,Per-IP rate limit
+2026-08-25T00:00:00Z,story_created,story,S3-R,,backlog,Archie,wizard,Retro and records
+2026-08-25T00:00:00Z,sprint_created,sprint,sprint-4,,planned,Archie,wizard,Luke can forget it exists
+2026-08-25T00:00:00Z,story_created,story,S4-1,,backlog,Archie,wizard,Runbook
+2026-08-25T00:00:00Z,story_created,story,S4-2,,backlog,Archie,wizard,Calibrate the countdown
+2026-08-25T00:00:00Z,story_created,story,S4-3,,backlog,Archie,wizard,Custom domain
+2026-08-25T00:00:00Z,story_created,story,S4-R,,backlog,Archie,wizard,Retro and records
