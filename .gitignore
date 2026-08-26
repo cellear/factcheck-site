@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE noise
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Agent tooling — personal, per-machine
+.claude/settings.local.json
+
+# Node
+node_modules/
