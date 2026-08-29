@@ -1,0 +1,23 @@
+{
+  "created_at": "2026-08-29T19:45:05.568Z",
+  "claim_text": "The sun revolves around the earth",
+  "model": "claude-sonnet-5",
+  "served_by_model": "claude-sonnet-5",
+  "skill_commit": "73a08409365b4b07e204989d60682f9de1a2d26a",
+  "forced_tool_error": false,
+  "outcome": "ok",
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "used_fallback": false,
+  "duration_ms": 13755,
+  "usage": {
+    "input_tokens": 8130,
+    "output_tokens": 1010,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "searches": 0
+  },
+  "cost_usd": 0.02636,
+  "tool_errors": [],
+  "report": "# Fact-Check: \"The sun revolves around the earth\"\n\n## Main Claim Identified\nThe claim asserts that the Sun orbits the Earth (a geocentric model of the solar system).\n\n## Triage: **Uncontroversial — and False**\n\nThis isn't a disputed scientific question requiring source-independence analysis or web searches — it's a settled matter of basic astronomy with essentially unanimous scientific consensus since the 17th century.\n\n**Why it's false:**\n- The Earth and other planets in our solar system orbit the Sun (heliocentric model), not the reverse.\n- This was established observationally by Copernicus, Galileo, and Kepler in the 16th–17th centuries and has been confirmed repeatedly since through countless independent lines of evidence: stellar parallax, spacecraft trajectories, planetary motion calculations, radar ranging, and more.\n- The old geocentric model (Earth at the center, Sun revolving around it) was the prevailing view in antiquity and the medieval period but was overturned once precise observations of planetary motion became available.\n\n**One nuance worth noting:** Technically, in the strict physics sense, the Sun and Earth both orbit their common center of mass (barycenter). But because the Sun is about 333,000 times more massive than Earth, that barycenter sits just below the Sun's surface — so for all practical purposes, it's accurate to say Earth orbits the Sun, not vice versa.\n\n## Bottom Line\nThe claim as stated is **false**. It reflects the ancient geocentric model, which was scientifically disproven centuries ago. This is not an area of genuine scientific dispute, so I haven't run a full source-independence/citation-chain analysis — that process is reserved for genuinely contested claims.\n\nIf you'd like, I can:\n- Point you to accessible explanations of the heliocentric model and its evidence\n- Fact-check a *different* claim (e.g., if this was meant as a test case, or if you encountered this claim in a specific post with additional context)\n\nLet me know if you want either of those!"
+}
