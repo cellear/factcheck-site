@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fact-check</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    line-height: 1.5;
+  }
+  textarea {
+    width: 100%;
+    min-height: 8rem;
+    font: inherit;
+    padding: 0.75rem;
+    box-sizing: border-box;
+  }
+  button {
+    font: inherit;
+    padding: 0.6rem 1.4rem;
+    margin-top: 0.75rem;
+    cursor: pointer;
+  }
+  button:disabled { cursor: not-allowed; opacity: 0.6; }
+  #status {
+    margin-top: 1rem;
+    font-weight: 600;
+    min-height: 1.4em;
+  }
+  .privacy-note {
+    font-size: 0.85em;
+    opacity: 0.75;
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+  <h1>Fact-check a claim</h1>
+  <p>Paste a claim below. This has no privacy protections — don't paste anything you wouldn't
+     want someone else to see.</p>
+
+  <form id="check-form">
+    <textarea id="claim" placeholder="Paste the claim you want checked..." required></textarea>
+    <br>
+    <button id="submit-btn" type="submit">Check it</button>
+  </form>
+
+  <p id="status" aria-live="polite"></p>
+
+  <script>
+    const API_BASE = "https://factcheck-worker.lm2000.workers.dev";
+    const COUNTDOWN_SECONDS = 90;
+
+    const form = document.getElementById("check-form");
+    const textarea = document.getElementById("claim");
+    const submitBtn = document.getElementById("submit-btn");
+    const statusEl = document.getElementById("status");
+
+    let countdownTimer = null;
+
+    function startCountdown() {
+      let remaining = COUNTDOWN_SECONDS;
+      statusEl.textContent = `Checking... about ${remaining}s`;
+      countdownTimer = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          statusEl.textContent =
+            "Still checking — claims that need many sources can take up to six minutes.";
+        } else {
+          statusEl.textContent = `Checking... about ${remaining}s`;
+        }
+      }, 1000);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const claim = textarea.value.trim();
+      if (!claim) return;
+
+      submitBtn.disabled = true;
+      textarea.disabled = true;
+      startCountdown();
+
+      try {
+        const response = await fetch(`${API_BASE}/check`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ claim }),
+        });
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        if (!data.id) {
+          throw new Error("No id returned");
+        }
+        if (countdownTimer) clearInterval(countdownTimer);
+        window.location.href = `/r/${data.id}`;
+      } catch (err) {
+        if (countdownTimer) clearInterval(countdownTimer);
+        statusEl.textContent = "Something went wrong reaching the checker — please try again.";
+        submitBtn.disabled = false;
+        textarea.disabled = false;
+      }
+    });
+  </script>
+
+  <p class="privacy-note">Results get a permanent, shareable link once the check completes.</p>
+</body>
+</html>
