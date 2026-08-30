@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fact-check result</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    line-height: 1.5;
+  }
+  .claim {
+    font-style: italic;
+    border-left: 3px solid #999;
+    padding-left: 0.75rem;
+    margin: 1rem 0;
+  }
+  .failure {
+    border: 1px solid #c00;
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+  }
+  .failure h2 { margin-top: 0; }
+  .search-cap-note {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin: 1rem 0;
+  }
+  .sources { margin-top: 2rem; }
+  .sources li { margin-bottom: 0.4rem; word-break: break-word; }
+  .meta {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ccc;
+    font-size: 0.85em;
+    opacity: 0.75;
+  }
+  a { color: inherit; }
+  #content pre, #content code { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <p><a href="/">&larr; Check another claim</a></p>
+  <div id="content">Loading…</div>
+
+  <script>
+    const API_BASE = "https://factcheck-worker.lm2000.workers.dev";
+
+    const FAILURE_MESSAGES = {
+      refusal: "The model declined to check this claim.",
+      tool_error: "A search tool error interrupted this check before it could finish.",
+      truncated: "The check was cut off before it finished.",
+      no_report: "The check completed but did not produce a report.",
+    };
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+
+    function renderFailure(record) {
+      const message = FAILURE_MESSAGES[record.outcome] || "This check did not complete successfully.";
+      return `
+        <p class="claim">${escapeHtml(record.claim_text)}</p>
+        <div class="failure">
+          <h2>Check failed</h2>
+          <p>${escapeHtml(message)}</p>
+        </div>
+        ${renderMeta(record)}
+      `;
+    }
+
+    function renderSources(citations) {
+      if (!citations || citations.length === 0) return "";
+      const seen = new Set();
+      const deduped = [];
+      for (const c of citations) {
+        if (!c.url || seen.has(c.url)) continue;
+        seen.add(c.url);
+        deduped.push(c);
+      }
+      if (deduped.length === 0) return "";
+      const items = deduped
+        .map((c) => `<li><a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.title || c.url)}</a></li>`)
+        .join("");
+      return `<div class="sources"><h2>Sources</h2><ul>${items}</ul></div>`;
+    }
+
+    function renderMeta(record) {
+      const date = new Date(record.created_at).toLocaleString();
+      const durationS = (record.duration_ms / 1000).toFixed(1);
+      const shortCommit = record.skill_commit ? record.skill_commit.slice(0, 7) : "unknown";
+      return `
+        <div class="meta">
+          <div>Model: ${escapeHtml(record.model)}</div>
+          <div>Skill commit: ${escapeHtml(shortCommit)}</div>
+          <div>Checked: ${escapeHtml(date)}</div>
+          <div>Duration: ${durationS}s</div>
+        </div>
+      `;
+    }
+
+    function renderOk(record) {
+      const searchCapNote = record.search_cap_hit
+        ? `<p class="search-cap-note">Search budget reached; this report is based on 5 searches.</p>`
+        : "";
+      const reportHtml = marked.parse(record.report || "");
+      return `
+        <p class="claim">${escapeHtml(record.claim_text)}</p>
+        ${searchCapNote}
+        <div class="report">${reportHtml}</div>
+        ${renderSources(record.citations)}
+        ${renderMeta(record)}
+      `;
+    }
+
+    async function main() {
+      const content = document.getElementById("content");
+      const id = location.pathname.replace(/^\/r\//, "");
+
+      let response;
+      try {
+        response = await fetch(`${API_BASE}/r/${id}`);
+      } catch (err) {
+        content.textContent = "Something went wrong loading this result — please try again.";
+        return;
+      }
+
+      if (response.status === 404) {
+        content.textContent = "No result found for this link.";
+        return;
+      }
+      if (!response.ok) {
+        content.textContent = "Something went wrong loading this result — please try again.";
+        return;
+      }
+
+      const record = await response.json();
+      content.innerHTML = record.outcome === "ok" ? renderOk(record) : renderFailure(record);
+    }
+
+    main();
+  </script>
+</body>
+</html>
