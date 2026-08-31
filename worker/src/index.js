@@ -124,12 +124,17 @@ function computeCostUsd(usage, searches) {
 }
 
 async function handleCheck(request, env) {
-  let claim;
+  let claim, inviteWord;
   try {
     const body = await request.json();
     claim = typeof body?.claim === "string" ? body.claim.trim() : "";
+    inviteWord = typeof body?.invite_word === "string" ? body.invite_word.trim() : "";
   } catch {
     return jsonResponse({ error: "invalid JSON body" }, 400);
+  }
+
+  if (!inviteWord || inviteWord !== env.INVITE_WORD) {
+    return new Response("Unauthorized", { status: 403, headers: CORS_HEADERS });
   }
   if (!claim) {
     return jsonResponse({ error: "missing claim" }, 400);
