@@ -129,6 +129,14 @@
           if (countdownTimer) clearInterval(countdownTimer);
           return;
         }
+        if (response.status === 402) {
+          statusEl.textContent = "Monthly budget reached — checks are paused until next month.";
+          submitBtn.disabled = false;
+          textarea.disabled = false;
+          inviteWordInput.disabled = false;
+          if (countdownTimer) clearInterval(countdownTimer);
+          return;
+        }
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }

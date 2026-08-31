@@ -67,11 +67,17 @@
 
     function renderFailure(record) {
       const message = FAILURE_MESSAGES[record.outcome] || "This check did not complete successfully.";
+      // S3-3: name the refusal category when the API gave one, instead of a bare "declined."
+      const categoryLine =
+        record.outcome === "refusal" && record.refusal_category
+          ? `<p>Category: ${escapeHtml(record.refusal_category)}</p>`
+          : "";
       return `
         <p class="claim">${escapeHtml(record.claim_text)}</p>
         <div class="failure">
           <h2>Check failed</h2>
           <p>${escapeHtml(message)}</p>
+          ${categoryLine}
         </div>
         ${renderMeta(record)}
       `;

@@ -34,6 +34,9 @@ const FIXTURES = {
     usage: { input_tokens: 4200, output_tokens: 40, searches: 0 },
     cost_usd: 0.0084,
     outcome: "refusal",
+    // S3-3: a fabricated category, exercising the result page's category line —
+    // not a real category Anthropic returned, since this is a seeded fixture.
+    refusal_category: "fixture_category",
     search_cap_hit: false,
     tool_errors: [],
     duration_ms: 3100,

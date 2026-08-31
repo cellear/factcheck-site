@@ -22,7 +22,7 @@
 
 ---
 
-### S3-2 · Spend meter and hard cap · [ ]
+### S3-2 · Spend meter and hard cap · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** m · **Depends on:** S2-2
 
@@ -32,12 +32,12 @@
 - Read-only `GET /spend` (invite word required) returns the month's total
 
 **Acceptance criteria:**
-- [ ] Setting the cap to 0.01 makes the next check refuse with the budget page; setting it back to 20 restores service
-- [ ] `GET /spend` matches the sum of `cost_usd` across the month's records within rounding
+- [x] Setting the cap to 0.01 makes the next check refuse with the budget page; setting it back to 20 restores service — verified live: `SPEND_CAP_USD` set to 0.01 via `wrangler secret put`, next check returned 402 "Monthly budget reached" with no spend, reset to 20 restored a real check
+- [x] `GET /spend` matches the sum of `cost_usd` across the month's records within rounding — verified: a real check's `cost_usd` ($0.09046) matched `GET /spend`'s `total_usd` exactly
 
 ---
 
-### S3-3 · Refusal handling · [ ]
+### S3-3 · Refusal handling · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** s · **Depends on:** S2-2
 
@@ -45,7 +45,7 @@
 - Check `stop_reason` before reading content; `stop_reason: refusal` → `outcome: refusal` with the `stop_details` category stored. (This story originally said to enable `fallbacks: "default"` — struck in Sprint 1: it 400s on `claude-sonnet-5`, Opus-tier/Fable only. Refusal detection needs no beta.)
 
 **Acceptance criteria:**
-- [ ] The refusal fixture path and a real refusal (if one can be provoked) both render as a failed check naming the category
+- [x] The refusal fixture path and a real refusal (if one can be provoked) both render as a failed check naming the category — fixture path verified live (category renders); did not attempt to provoke a real refusal, since doing so means deliberately crafting a claim near harmful/sensitive territory — `classify()`'s `stop_reason`-before-`content` ordering and category extraction verified with a no-cost unit test instead (a synthetic message with `content: null` would throw if content were read first; it didn't)
 
 ---
 
@@ -83,7 +83,7 @@ this: "Luke may strike this story.")
 
 ---
 
-### S3-7 · Enable prompt caching in the real handler · [ ]
+### S3-7 · Enable prompt caching in the real handler · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** s · **Depends on:** S2-2
 
@@ -100,9 +100,13 @@ this: "Luke may strike this story.")
   billed them at the cache rates
 
 **Acceptance criteria:**
-- [ ] A post-deploy record shows non-zero cache usage and a `cost_usd` computed with the
-      cache rates
-- [ ] Decision + measured numbers handed to Lila for `DOC/architecture.md` (capacity note too)
+- [x] A post-deploy record shows non-zero cache usage and a `cost_usd` computed with the
+      cache rates — verified: `cache_creation_input_tokens: 11815`, `cache_read_input_tokens:
+      27334` on a real post-deploy check; `computeCostUsd()` already billed cache rates (written
+      forward-looking in S2-2, confirmed correct now that real cache usage exists)
+- [x] Decision + measured numbers handed to Lila for `DOC/architecture.md` (capacity note too) —
+      handed to Lila in Cody's handoff (the decision itself was already made and recorded by
+      Archie during Sprint 3 planning; this box is about the post-deploy confirmation numbers)
 
 ---
 

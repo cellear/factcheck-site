@@ -8,7 +8,8 @@
 //   2. The claim is wrapped in a single-turn frame (spike sends the raw claim).
 //   3. `max_uses_exceeded` is not a tool_error; it's outcome: ok, search_cap_hit: true.
 //
-// No invite word or spend cap yet (Sprint 3).
+// S3-1 added the invite word. S3-2 adds the spend meter/cap and GET /spend. S3-3 stores the
+// refusal category. S3-7 turns on prompt caching (S2-7 measured it cheaper even cold).
 
 import SKILL_MD from "../../skill/SKILL.md";
 import SOURCE_MD from "../../skill/SOURCE.md";
@@ -37,6 +38,31 @@ function jsonResponse(body, status = 200) {
 function generateId() {
   const bytes = crypto.getRandomValues(new Uint8Array(16)); // 128 bits, URL-safe base64
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// S3-2: spend:<yyyy-mm>, a running dollar total for the calendar month. No compare-and-swap in
+// KV, so a read-modify-write under real concurrent traffic could lose an update — accepted at
+// this project's traffic (a dozen checks/day), not fixed here.
+function spendKeyForNow() {
+  const now = new Date();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `spend:${now.getUTCFullYear()}-${month}`;
+}
+
+async function getMonthSpend(env) {
+  const stored = await env.RESULTS.get(spendKeyForNow());
+  return stored ? Number(stored) : 0;
+}
+
+async function addToMonthSpend(env, amountUsd) {
+  const key = spendKeyForNow();
+  const current = await getMonthSpend(env);
+  await env.RESULTS.put(key, String(current + amountUsd));
+}
+
+function spendCapUsd(env) {
+  const parsed = Number(env.SPEND_CAP_USD);
+  return Number.isFinite(parsed) ? parsed : 20;
 }
 
 // The site has no second turn; SKILL.md assumes a chat and would otherwise stop and ask on
@@ -90,9 +116,17 @@ function extractReport(assembled) {
   return match ? assembled.slice(match.index) : null;
 }
 
+// S3-3: stop_reason is checked before any content is read, per DOC's failure-handling rule.
+// stop_details.category (when present) is stored on the record so the result page can name
+// the refusal category instead of a bare "refused".
 function classify(message, report) {
   if (message.stop_reason === "refusal") {
-    return { outcome: "refusal", searchCapHit: false, toolErrors: [] };
+    return {
+      outcome: "refusal",
+      searchCapHit: false,
+      toolErrors: [],
+      refusalCategory: message.stop_details?.category ?? null,
+    };
   }
 
   const searchBlocks = message.content.filter((b) => b.type === "web_search_tool_result");
@@ -140,9 +174,18 @@ async function handleCheck(request, env) {
     return jsonResponse({ error: "missing claim" }, 400);
   }
 
+  // S3-2: refuse before spending anything once the month's total is at or over the cap.
+  // Decision 16: a silent refusal with a plain message, no notification to Luke in v1.
+  if ((await getMonthSpend(env)) >= spendCapUsd(env)) {
+    return new Response("Monthly budget reached", { status: 402, headers: CORS_HEADERS });
+  }
+
   const startedAt = new Date();
   const startMs = Date.now();
 
+  // S3-7: system prompt sent as a cacheable block. S2-7 measured this cheaper than an uncached
+  // call even on a cold cache (the 1.25x write premium is outweighed by 0.1x reads inside the
+  // same request's tool loop), and 58% cheaper once warm. No behavior change, only billing shape.
   const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -153,7 +196,7 @@ async function handleCheck(request, env) {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 8192,
-      system: SKILL_MD,
+      system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
       tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
       messages: [{ role: "user", content: frameClaim(claim) }],
     }),
@@ -172,9 +215,10 @@ async function handleCheck(request, env) {
 
   const { assembled, citations } = extractTextAndCitations(message);
   const report = extractReport(assembled);
-  const { outcome, searchCapHit, toolErrors } = classify(message, report);
+  const { outcome, searchCapHit, toolErrors, refusalCategory } = classify(message, report);
   const searches = message.content.filter((b) => b.type === "web_search_tool_result").length;
   const usage = message.usage;
+  const costUsd = computeCostUsd(usage, searches);
 
   const id = generateId();
   const record = {
@@ -189,18 +233,36 @@ async function handleCheck(request, env) {
     usage: {
       input_tokens: usage.input_tokens,
       output_tokens: usage.output_tokens,
+      cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
+      cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
       searches,
     },
-    cost_usd: computeCostUsd(usage, searches),
+    cost_usd: costUsd,
     outcome,
+    refusal_category: refusalCategory ?? null,
     search_cap_hit: searchCapHit,
     tool_errors: toolErrors,
     duration_ms: durationMs,
   };
 
+  // S3-2: every completed check meters, including failed outcomes — a refusal or tool_error
+  // still spent tokens.
+  await addToMonthSpend(env, costUsd);
   await env.RESULTS.put(`result:${id}`, JSON.stringify(record));
 
   return jsonResponse({ id });
+}
+
+// S3-2: GET /spend?invite_word=<word> -> { month, total_usd }. Read-only, gated the same as a
+// check so spend totals aren't public to anyone without the invite word.
+async function handleGetSpend(url, env) {
+  const inviteWord = url.searchParams.get("invite_word")?.trim() ?? "";
+  if (!inviteWord || inviteWord !== env.INVITE_WORD) {
+    return new Response("Unauthorized", { status: 403, headers: CORS_HEADERS });
+  }
+  const key = spendKeyForNow();
+  const totalUsd = await getMonthSpend(env);
+  return jsonResponse({ month: key.slice("spend:".length), total_usd: totalUsd });
 }
 
 // S2-3: GET /r/:id. Reads result:<id> from KV, returns it as JSON; unknown id -> 404.
@@ -223,6 +285,9 @@ export default {
     }
     if (url.pathname === "/check" && request.method === "POST") {
       return handleCheck(request, env);
+    }
+    if (url.pathname === "/spend" && request.method === "GET") {
+      return handleGetSpend(url, env);
     }
     const resultMatch = url.pathname.match(/^\/r\/([^/]+)$/);
     if (resultMatch && request.method === "GET") {
