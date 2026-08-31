@@ -43,7 +43,7 @@ audience and the "site runs the check" decision. One serverless function is the 
 | 11 | A wrong result is what the method produced that day; no retraction, editing, or supersession | decided | Moderation tooling; result versioning |
 | 12 | No privacy assumed; the page tells users not to paste anything they want kept quiet | decided | Retention/deletion machinery |
 | 13 | Skill version: record the skill's git commit in every result; do not build version-tracking beyond that | decided | Nothing; preserves the option |
-| 14 | Hosting: **Cloudflare Pages + Workers + KV** | recommended | Nothing hard; see rationale |
+| 14 | Hosting: **Cloudflare Pages + Workers + KV** | decided (confirmed by the S2-1 six-minute hold test, 2026-08-30) | Nothing hard; see rationale |
 | 15 | Model: **`claude-sonnet-5`**, confirmed after the spike (S1-4, 2026-08-28) — Luke: "we don't need Opus for this; Sonnet does it just fine." One API call per check, `web_search_20260209` as the tool (Haiku 4.5 would need the older `web_search_20250305` variant — moot, not selected). The spike found the two models at parity on settled and news claims, but Haiku certified false specifics as true on the one contested claim tested — the product's core case | decided | Haiku 4.5 as the shipped model |
 | 16 | Shutdown is a silent refusal with a plain "monthly budget reached" message; no notification to Luke in v1 | decided | — |
 | 17 | Result rendering: **verbatim markdown**, assembled from content blocks — join text blocks with no separator, turn `citations` into a Sources list, start at the first `# Fact-Check Report` line — decided with Luke, 2026-08-28 (S1-5) | decided | Structured/parsed rendering; a template keyed to specific headings |
@@ -56,6 +56,21 @@ production-shaped runs) at $0.11–$0.56, mean **$0.36** — about **55 checks/m
 cap, under 2 a day. Haiku 4.5 measured mean $0.05 — about **380 checks/month**. The cap remains
 the real capacity figure regardless of which model is picked; the site will visibly hit it if a
 link lands. See `spike/RESULTS.md` and the S1-4 handoff for the full numbers.
+
+### Citations note on decision 17
+
+Measured in S2-2 (2026-08-30): `claude-sonnet-5` invokes `web_search` from inside an automatic,
+undeclared `code_execution` sandbox — not requested, not documented as the default. In that mode
+text blocks carry no `citations` field at all, so the classic auto-citation mechanism (inline
+`block.citations`, with a `cited_text` excerpt) never fires. `citations[]` is built instead from
+the raw `web_search_tool_result` content (url + title per result), deduped by URL at render time
+as already planned. This means the Sources list is a "sources consulted" list, not a "sources
+actually quoted" list — `cited_text` is `null` under current, measured behavior. Decision 17's
+rendering choice (verbatim markdown, Sources list from `citations[]`) is unaffected; only the
+data backing `citations[]` differs from what was assumed when it was written. Implementation:
+`worker/src/index.js`'s `extractTextAndCitations()` checks for inline `block.citations` first (in
+case it ever appears) and falls back to raw search-result content. Source:
+`AMS/HANDOFF/handoff-2026-08-30-s2-2-post-check-cody.md`.
 
 ---
 
@@ -120,7 +135,10 @@ search_cap_hit, tool_errors, duration_ms
 
 `outcome` exists because of the failure-handling rule below. `cost_usd` and `duration_ms` exist
 so the spend counter and the countdown prediction are grounded in real numbers over time.
-`citations` is what makes the result page's Sources list possible (decision 17).
+`citations` is what makes the result page's Sources list possible (decision 17) — **as measured
+in S2-2, `cited_text` is always `null`**: the current API behavior gives no per-result excerpt in
+this mode, so `citations[]` is a list of sources consulted (url + title), not sources actually
+quoted from. See the citations note under decision 17 below.
 `search_cap_hit` flags the one-line search-budget note. `served_by_model` records the model that
 actually generated the report, distinct from the requested `model` (relevant if a fallback is
 ever added later — none is used in v1). `tool_errors` records what the tool layer reported, if
@@ -171,17 +189,17 @@ place the "as close to nothing" principle yields to correctness.
 Three minutes is confirmed as a **typical figure, not a hard ceiling**, for Sonnet 5. The
 **hosting filter** (decision 14) is now a **six-minute** end-to-end hold, not three: most
 function platforms cap synchronous requests well under that. Cloudflare Workers does not count
-time awaiting an upstream response against its CPU limit, which is why it is recommended, but
-S2-1 must confirm a real check survives the six-minute hold end to end before anything is built
-on the platform. Two escape hatches if the platform or an intermediary drops a long idle
-connection: SSE with a heartbeat (held in reserve), or respond-with-id-then-poll `/r/<id>`.
+time awaiting an upstream response against its CPU limit, which is why it is recommended — S2-1
+confirmed a real check survives the six-minute hold end to end (2026-08-30). Two escape hatches
+remain in reserve if the platform or an intermediary ever drops a long idle connection: SSE with
+a heartbeat, or respond-with-id-then-poll `/r/<id>`.
 
 ## Hosting rationale (decision 14)
 
 Cloudflare: static hosting (Pages), the function (Workers), the bucket (KV), secrets, and a
 free tier that covers a dozen checks a day, all under one account. The **six-minute** hold (see
-Latency) is the deciding constraint; S2-1 must confirm a real check survives it end to end
-before anything is built on the platform. Netlify and Vercel are the fallbacks if it does not.
+Latency) was the deciding constraint; S2-1 confirmed a real check survives it end to end
+(2026-08-30). Netlify and Vercel remain the fallbacks if that ever stops being true.
 
 ---
 
@@ -200,8 +218,9 @@ before anything is built on the platform. Netlify and Vercel are the fallbacks i
 
 ## Open questions
 
-1. Confirm decision 14 (Cloudflare) — now conditional on the **six-minute** hold (was three);
-   S2-1's test.
+1. ~~Confirm decision 14 (Cloudflare) — six-minute hold~~ — resolved by S2-1: confirmed
+   2026-08-30, a real browser held a Cloudflare Workers request open the full six minutes and
+   returned normally. Decision 14 stands.
 2. ~~Sonnet 5 or Haiku 4.5~~ — resolved by S1-4: `claude-sonnet-5` (decision 15).
 3. Per-IP rate limiting alongside the invite word — cheap, but is it wanted?
 4. ~~Does the result page show the model's full report verbatim, or a structured render of it?~~
@@ -213,8 +232,8 @@ Ran across S1-2 through S1-4. Results, per-claim reports, and the summary table 
 `spike/RESULTS.md` and `spike/results/`; the read-out is
 `HANDOFF/handoff-2026-08-28-s1-4-s1-5-spike-readout-archie.md`. It replaced the estimates
 throughout this document, set the countdown prediction, overturned the three-minute figure as a
-ceiling (confirmed as typical), settled the model (`claude-sonnet-5`), and left the hosting
-recommendation open pending the six-minute hold test (S2-1).
+ceiling (confirmed as typical), settled the model (`claude-sonnet-5`), and set up the six-minute
+hold test that S2-1 later confirmed (2026-08-30), closing out the hosting decision.
 
 ## Benchmark
 
@@ -225,5 +244,5 @@ This document was written from the discovery conversation, not from that section
 
 ---
 
-Last updated: 2026-08-28 by Lila (claude-sonnet-5) — applied S1-4/S1-5 corrections from Archie's
-handoff and recorded Luke's model and rendering decisions
+Last updated: 2026-08-31 by Lila (claude-sonnet-5) — resolved open question 1 (S2-1) and added
+the citations note under decision 17 (S2-2), both via the S2-R retro

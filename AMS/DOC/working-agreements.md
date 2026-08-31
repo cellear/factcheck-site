@@ -33,10 +33,15 @@ Example of the correct ending to a piece of work:
 **Related:** the same reasoning applies to anything outward-facing — creating repos, opening
 PRs, posting comments, changing repo visibility. Ask first, and prefer handing over the command.
 
-## Luke shapes the first commit
+## Commits
 
-He asked to compose the initial commit of `factcheck-site` himself. Do not commit on his behalf
-without being asked, and do not treat "the work is finished" as authorization to commit it.
+Luke composed `factcheck-site`'s first commit himself — as a one-time reconstruction: Cody
+rebuilt 19 historical commits from the HANDOFF record, and Luke pushed that history himself.
+
+**Since 2026-08-30/31, this is standing, not one-time.** Luke's instruction: each persona
+commits their own story's work locally at the end of their session, without waiting to be asked.
+This does not change who pushes — "Agents never push" above is unchanged; Luke remains the only
+one who pushes.
 
 ## A sprint is accepted by demo, or it isn't over
 
@@ -63,6 +68,14 @@ Luke's first live run of `./demo.sh` looked hung during the ~6-minute live API c
 way to move past a step already checked off. Applies to every sprint's demo runner going forward,
 not just this one.
 
+**Quinn builds and dry-runs the demo; Nadia runs it live with Luke.** Quinn's job stops at a
+verified dry-run — build `demo.sh`, exercise every step that doesn't need Luke live, flag
+anything that can't be performed as written as a fix story, then hand off (via its own "Prompt
+for Next Assistant") to Nadia. Quinn should not stay in the loop to run the demo live with Luke
+or transcribe his acceptance verdict — that's Nadia's job. This drifted the other way in both
+Sprint 1 and Sprint 2 because nothing in writing said otherwise; Luke asked for it directly,
+2026-08-31.
+
 ## DOC and LEARNINGS have one writer
 
 **Lila (the Librarian) is the only persona who writes to `DOC/` or `LEARNINGS/`.** Every other
@@ -80,5 +93,5 @@ it over as a list in your handoff. Do not edit the file yourself, even to fix so
 
 ---
 
-Last updated: 2026-08-30 by Lila (claude-sonnet-5) — added the demo-script visible-progress /
-skip-confirmed-step convention (S1-R)
+Last updated: 2026-08-31 by Lila (claude-sonnet-5) — recorded the standing per-story commit
+instruction and the Quinn-hands-off-to-Nadia rule (S2-R)
