@@ -1,11 +1,16 @@
 # Sandy's Desk
 
-**Last active:** 2026-08-25
+**Last active:** 2026-08-31
 
 ## Where things stand
 
-**S1-1 complete.** Vendored `SKILL.md` from upstream (commit 73a08409365b4b07e204989d60682f9de1a2d26a), byte-identical copy in place, `SOURCE.md` written with repo URL, hash, and date. Unblocks Cody's S1-2.
+**S3-1 complete.** Invite word validation is deployed and verified:
+- worker/src/index.js: POST /check requires invite_word, returns 403 before API call if wrong/missing ✓
+- site/index.html: Form field with localStorage persistence ✓
+- Deployed to production and tested (wrong word → 403, right word → proceeds) ✓
+
+Commit: b2acaac
 
 ## Next
 
-Standby for next story assignment from Nadia (S1-R pending sprint acceptance).
+Standby for Cody to complete S3-2, S3-3, S3-7 (one session), then S3-5 assignment.

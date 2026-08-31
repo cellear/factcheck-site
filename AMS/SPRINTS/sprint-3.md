@@ -10,7 +10,7 @@
 
 ## Stories
 
-### S3-1 · Invite word · [ ]
+### S3-1 · Invite word · [x]
 
 **Owner:** Sandy · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S2-2
 
@@ -18,7 +18,7 @@
 - `POST /check` requires `invite_word` matching a Worker secret; wrong or missing → 403 with a plain message; the form has the field and remembers it in localStorage
 
 **Acceptance criteria:**
-- [ ] Wrong word is refused before any API call; right word proceeds
+- [x] Wrong word is refused before any API call; right word proceeds
 
 ---
 
