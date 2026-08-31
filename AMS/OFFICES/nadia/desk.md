@@ -1,20 +1,22 @@
 # Nadia's Desk
 
-**Last active:** 2026-08-29
+**Last active:** 2026-08-31
 
 ## Where things stand
 
-Sprint 1 ("It runs") is **Accepted** (2026-08-29, Luke ran `./demo.sh` end to end). I ran my half
-of S1-R: reviewed every Sprint 1 handoff, fixed a bookkeeping gap (S1-1's checkboxes were never
-ticked despite the story being done since 2026-08-25 — ticked them after verifying the files),
-and handed Lila a findings list + one DOC promotion candidate in
-`AMS/HANDOFF/handoff-2026-08-29-s1-r-retro-nadia.md`. Lila's half (writing
-`LEARNINGS/sprint-1.md`, applying the demo.sh-convention promotion to
-`DOC/working-agreements.md`) is next — not mine to do.
+Sprint 2 ("It's a website") is **Accepted** (2026-08-31, Luke ran `./demo.sh` end to end). I ran
+my half of S2-R: reviewed every Sprint 2 handoff, confirmed the S1-R checkbox-hygiene fix held
+(no gaps this sprint), and handed Lila a findings list plus DOC promotions in
+`AMS/HANDOFF/handoff-2026-08-31-s2-r-retro-nadia.md` — including a new one from a direct
+conversation with Luke: Quinn should hand off the *live* demo run and acceptance-recording to me
+going forward, instead of staying in the loop himself (that's what happened, un-written, in both
+Sprint 1 and Sprint 2). Lila's half (LEARNINGS/sprint-2.md + the DOC edits) is next, not mine.
 
 ## Next
 
-Once Lila closes her half of S1-R, Sprint 2 ("It's a website", `AMS/SPRINTS/sprint-2.md`) starts
-running — that's Archie's planning lane, not mine, until stories are in flight and there's a demo
-table to facilitate toward. My next real task is the same loop as Sprint 1: watch Sprint 2 run,
-then run its Sprint Demo Script with Luke when the team believes it's done.
+Once Lila closes her half of S2-R, watch for the Quinn-hands-off-to-Nadia convention actually
+landing in `DOC/working-agreements.md` — that's the thing to check works before the *next* sprint
+demo, since it's failed twice already by not being written down. Sprint 3
+(`AMS/SPRINTS/sprint-3.md`, already planned) is Archie's planning lane to kick off after S2-R
+closes. My next real task is the same loop again: watch Sprint 3 run, then — this time — actually
+be the one who runs its Sprint Demo Script live with Luke.
