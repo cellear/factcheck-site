@@ -4,13 +4,23 @@
 
 ## Where things stand
 
-Sprint 2 ("It's a website") **Accepted** (Luke, 2026-08-31) — all demos passed: phone check,
-private-window permalink match, texted link, and all five S2-6 fixtures. S2-8 (my story) is
-done; recorded acceptance in `AMS/SPRINTS/sprint-2.md`.
+S3-8 done: Sprint 3's `demo.sh` replaces the Sprint 2 version, guiding through the five demo
+steps (wrong invite word, spend-cap flip via `wrangler secret put`, `/spend`, the tool_error and
+refusal fixtures, sending to three people). Steps that flip production secrets print the exact
+command rather than running it. Dry-ran everything I could without spending or needing other
+people: re-verified `fixture-tool-error` and `fixture-refusal` render correctly (the latter now
+shows the refusal category S3-3 added), confirmed the form page shows S3-5's updated copy,
+confirmed `/spend` gates a wrong invite word (403, no spend), and exercised the script's own
+mechanics (full-skip, start-step jump, id normalization) with piped input — all clean, `git
+status` showed only `demo.sh` modified.
+
+**Per `DOC/working-agreements.md`'s Quinn-hands-off-to-Nadia rule** (added 2026-08-31 after
+Luke corrected me on Sprint 2's handoff): my job stopped at the verified dry-run. I did not run
+the live demo with Luke and did not touch the sprint's Acceptance section — handed off straight
+to Nadia with an addressed prompt in this session's handoff.
 
 ## Next
 
-Nothing queued for me. Remaining Sprint 2 story: **S2-R** (retro — Nadia runs it, Lila writes
-`LEARNINGS/sprint-2.md`), not mine. Sprint 3 ("It's safe to send to people" —
-`AMS/SPRINTS/sprint-3.md`) is already planned: invite word, spend cap, honest failure handling.
-No QA-lane story there yet. My job resumes once Sprint 3 has a demo table to dry-run.
+Nothing further from me. Nadia runs the live demo with Luke (steps 1, 2, and 5 need him live;
+step 2 also needs him to run two `wrangler secret put` commands himself) and records the
+verdict. I pick up again once Sprint 4 (or a Sprint 3 fix-story round) has a demo table.

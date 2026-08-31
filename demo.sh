@@ -2,18 +2,11 @@
 set -euo pipefail
 
 SITE_URL="https://factcheck-site.pages.dev"
-
-FIXTURES=(
-  "fixture-refusal|Should render: Check failed — the model declined to check this claim. No report, no verdict."
-  "fixture-tool-error|Should render: Check failed — a search tool error interrupted this check. No report, no verdict."
-  "fixture-truncated|Should render: Check failed — the check was cut off before it finished. No report, no verdict."
-  "fixture-no-report|Should render: Check failed — the check completed but did not produce a report. No report, no verdict."
-  "fixture-search-cap-hit|Should render: a FULL report with a Sources list, PLUS the note 'Search budget reached; this report is based on 5 searches.' This one IS a verdict."
-)
+WORKER_URL="https://factcheck-worker.lm2000.workers.dev"
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   echo "Usage: ./demo.sh [start-step]"
-  echo "  start-step: 1-4, default 1. Jump straight to a step instead of re-running earlier"
+  echo "  start-step: 1-5, default 1. Jump straight to a step instead of re-running earlier"
   echo "  ones you've already seen."
   exit 0
 fi
@@ -32,91 +25,78 @@ open_url() {
   fi
 }
 
-normalize_result_url() {
-  # Accepts a bare id or a full URL; echoes a full /r/<id> URL.
-  local input="$1"
-  if [[ "$input" == http* ]]; then
-    echo "$input"
-  else
-    echo "$SITE_URL/r/$input"
-  fi
-}
-
 if [ "$START_STEP" -le 1 ]; then
-  echo "=== Step 1: Live check on your phone ==="
-  echo "This step needs your phone — it's not something this script can do for you."
-  echo ""
-  echo "On your phone, open: $SITE_URL"
-  echo "Paste a claim and submit. Watch the countdown run; you should land on a /r/<id>"
-  echo "permalink with the report showing (this can take up to ~6 minutes for a contested"
-  echo "claim — the countdown itself explains that past 90s)."
-  read -rp $'\nOnce you land on the result, paste its URL or id here (or press Enter to skip): ' RESULT_INPUT
-  if [ -z "$RESULT_INPUT" ]; then
-    echo "No result entered — skipping. Steps 2 and 3 will ask again if you have a link later."
-  else
-    RESULT_URL=$(normalize_result_url "$RESULT_INPUT")
-    echo "Using: $RESULT_URL"
-  fi
+  echo "=== Step 1: Wrong invite word ==="
+  echo "On the site below, submit a claim with the WRONG invite word."
+  echo "Expected: refused immediately, no spend."
+  open_url "$SITE_URL"
   pause
 fi
 
 if [ "$START_STEP" -le 2 ]; then
-  echo "=== Step 2: Same permalink, private window, laptop ==="
-  if [ -z "${RESULT_URL:-}" ]; then
-    read -rp $'\nEnter the /r/<id> URL or id from step 1 (or press Enter to skip): ' RESULT_INPUT
-    if [ -n "$RESULT_INPUT" ]; then
-      RESULT_URL=$(normalize_result_url "$RESULT_INPUT")
-    fi
-  fi
-  if [ -z "${RESULT_URL:-}" ]; then
-    echo "No URL available — skipping."
-  else
-    echo "This needs a private/incognito window — not something this script can force open"
-    echo "reliably across browsers, so open one yourself and paste in:"
-    echo ""
-    echo "  $RESULT_URL"
-    echo ""
-    echo "Confirm it shows the same report and the same metadata (model, date, duration) as"
-    echo "step 1."
-  fi
+  echo "=== Step 2: Spend cap ==="
+  echo "This flips a production secret. Run this yourself — this script never writes to"
+  echo "production config for you:"
+  echo ""
+  echo "  cd worker && npx wrangler secret put SPEND_CAP_USD"
+  echo "  (enter 0.01 when prompted)"
+  pause
+  echo ""
+  echo "Now submit a claim with the CORRECT invite word on the site below."
+  echo "Expected: 'Monthly budget reached' page, no new spend."
+  open_url "$SITE_URL"
+  pause
+  echo ""
+  echo "Restore the cap:"
+  echo ""
+  echo "  cd worker && npx wrangler secret put SPEND_CAP_USD"
+  echo "  (enter 20 when prompted)"
+  pause
+  echo ""
+  echo "Submit one more claim with the correct invite word — it should complete normally."
   pause
 fi
 
 if [ "$START_STEP" -le 3 ]; then
-  echo "=== Step 3: Text the link to one person ==="
-  if [ -z "${RESULT_URL:-}" ]; then
-    read -rp $'\nEnter the /r/<id> URL or id to text (or press Enter to skip): ' RESULT_INPUT
-    if [ -n "$RESULT_INPUT" ]; then
-      RESULT_URL=$(normalize_result_url "$RESULT_INPUT")
-    fi
-  fi
-  if [ -z "${RESULT_URL:-}" ]; then
-    echo "No URL available — skipping."
+  echo "=== Step 3: /spend ==="
+  read -rp $'\nEnter your invite word to build the /spend link (or press Enter to skip): ' WORD
+  if [ -z "$WORD" ]; then
+    echo "No word entered — skipping."
   else
-    echo "Text this link to one person and ask them to open it:"
-    echo ""
-    echo "  $RESULT_URL"
+    open_url "$WORKER_URL/spend?invite_word=$WORD"
+    echo "Confirm the total matches your records."
   fi
-  read -rp $'\nPress Enter once they confirm they can see the report (or press Enter to skip this check)...' _
+  pause
 fi
 
 if [ "$START_STEP" -le 4 ]; then
-  echo "=== Step 4: Failure fixtures (from S2-6) ==="
-  echo "Five stable permalinks. Four should render as a failed check with no verdict; one"
-  echo "(search_cap_hit) should render as a real verdict plus a search-budget note."
-  for entry in "${FIXTURES[@]}"; do
-    id="${entry%%|*}"
-    expectation="${entry#*|}"
-    url="$SITE_URL/r/$id"
+  echo "=== Step 4: tool_error and refusal fixtures ==="
+  echo "Both should render as a failed check — no verdict."
+  for id in fixture-tool-error fixture-refusal; do
     echo ""
     echo "--- $id ---"
-    echo "$expectation"
-    open_url "$url"
+    open_url "$SITE_URL/r/$id"
     pause
   done
+  read -rp $'\nDid a real refusal happen this sprint? Paste its /r/<id> or id to view it too (or press Enter to skip): ' REAL_REFUSAL
+  if [ -n "$REAL_REFUSAL" ]; then
+    if [[ "$REAL_REFUSAL" == http* ]]; then
+      REAL_URL="$REAL_REFUSAL"
+    else
+      REAL_URL="$SITE_URL/r/$REAL_REFUSAL"
+    fi
+    open_url "$REAL_URL"
+    pause
+  fi
+fi
+
+if [ "$START_STEP" -le 5 ]; then
+  echo "=== Step 5: Send to three people ==="
+  echo "Send $SITE_URL and the invite word to three people. Each should complete a check and"
+  echo "forward a permalink back to you."
+  pause
 fi
 
 echo ""
-echo "Demo complete. Accepted when: all three views of one permalink match, every fixture"
-echo "renders as expected above, and (per the sprint file) the URL stays undisclosed beyond"
-echo "this demo until Sprint 3 is accepted."
+echo "Demo complete. Accepted when: all five steps happened as written, and the site is now in"
+echo "use."
