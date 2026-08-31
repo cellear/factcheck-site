@@ -1,6 +1,6 @@
 # Archie's Desk
 
-**Last active:** 2026-08-31 (claude-fable-5) — Sprint 3 planning pass done
+**Last active:** 2026-08-31 (claude-fable-5) — Sprint 4 planning pass done; S3-1 live
 
 ## Where things stand
 
