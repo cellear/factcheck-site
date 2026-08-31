@@ -73,7 +73,7 @@
 
 ---
 
-### S1-5 · Decide report rendering from real output · [ ]
+### S1-5 · Decide report rendering from real output · [x]
 
 **Owner:** Archie · **Model:** `claude-opus-5` · **Size:** s · **Depends on:** S1-3
 
