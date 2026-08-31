@@ -141,7 +141,7 @@
 
 ---
 
-### S2-8 · Sprint 2 demo runner and dry-run · [ ]
+### S2-8 · Sprint 2 demo runner and dry-run · [x]
 
 **Owner:** Quinn · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S2-4, S2-5, S2-6
 
@@ -154,12 +154,15 @@
   performed as written as a fix story BEFORE Luke runs it
 
 **Acceptance criteria:**
-- [ ] Quinn's dry-run happened before Luke's live run, and its result is in Quinn's handoff
-- [ ] `./demo.sh` covers all demo steps; the runner writes nothing outside what a check itself writes
+- [x] Quinn's dry-run happened before Luke's live run, and its result is in Quinn's handoff
+- [x] `./demo.sh` covers all demo steps; the runner writes nothing outside what a check itself writes —
+  trivially true this sprint: the runner never invokes a local check (the live check happens
+  through the deployed site on Luke's phone), so it makes no local writes at all; `git status`
+  after the full dry-run showed only `demo.sh` itself as modified
 
 ---
 
-### S2-R · Retro and records · [ ]
+### S2-R · Retro and records · [x]
 
 **Owner:** Nadia (runs it) and Lila (writes it) · **Model:** `claude-sonnet-5` · **Size:** s · **Depends on:** sprint accepted
 
@@ -168,8 +171,8 @@
 - Lila writes `LEARNINGS/sprint-2.md` and applies any DOC updates Nadia or Archie handed over
 
 **Acceptance criteria:**
-- [ ] `LEARNINGS/sprint-2.md` exists
-- [ ] No DOC edits were made by anyone but Lila
+- [x] `LEARNINGS/sprint-2.md` exists
+- [x] No DOC edits were made by anyone but Lila
 
 ---
 
@@ -211,9 +214,10 @@ Luke runs **`./demo.sh`** (Quinn's Sprint 2 runner, S2-8) which guides him throu
 
 ## Acceptance
 
-**Status:** Pending
-**Date:**
-**Reviewed by:** Luke
+**Status:** Accepted
+**Date:** 2026-08-31
+**Reviewed by:** Luke — ran `./demo.sh` end to end (phone check, private-window permalink,
+texted link, all five S2-6 fixtures) and confirmed all demos passed.
 
 ---
 

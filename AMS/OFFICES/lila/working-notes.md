@@ -17,3 +17,8 @@ Preferences, not facts about the current sprint — those belong in a sprint fil
 - Luke: communication between persona sessions must route through him — never message another
   persona's live session directly, even when asked to "pass along" a complaint or proposal.
   Write the text and hand it to him to deliver. Corrected 2026-08-29 after I sent one directly.
+- Don't let a real finding from a past sprint (S1-R's citation error) bleed into how I describe
+  the current one — I drafted a "What didn't work" line in S2-R's handoff describing a citation
+  error that hadn't actually happened this time, before checking. Caught and fixed it before
+  finalizing, but the lesson is to verify a claim about *this* session's own work before writing
+  it, the same way I verify citations from other personas.
