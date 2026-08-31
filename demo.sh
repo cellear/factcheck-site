@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RESULTS_DIR="spike/results"
-RESULTS_MD="spike/RESULTS.md"
-READOUT="AMS/HANDOFF/handoff-2026-08-28-s1-4-s1-5-spike-readout-archie.md"
-KEY_FILE="/Users/lukemccormick/Sites/CLAUDE/fact-check-key.key"
+SITE_URL="https://factcheck-site.pages.dev"
+
+FIXTURES=(
+  "fixture-refusal|Should render: Check failed — the model declined to check this claim. No report, no verdict."
+  "fixture-tool-error|Should render: Check failed — a search tool error interrupted this check. No report, no verdict."
+  "fixture-truncated|Should render: Check failed — the check was cut off before it finished. No report, no verdict."
+  "fixture-no-report|Should render: Check failed — the check completed but did not produce a report. No report, no verdict."
+  "fixture-search-cap-hit|Should render: a FULL report with a Sources list, PLUS the note 'Search budget reached; this report is based on 5 searches.' This one IS a verdict."
+)
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   echo "Usage: ./demo.sh [start-step]"
@@ -19,7 +24,7 @@ pause() {
   read -rp $'\nPress Enter to continue...' _
 }
 
-open_file() {
+open_url() {
   if command -v open >/dev/null 2>&1; then
     open "$1"
   else
@@ -27,120 +32,91 @@ open_file() {
   fi
 }
 
+normalize_result_url() {
+  # Accepts a bare id or a full URL; echoes a full /r/<id> URL.
+  local input="$1"
+  if [[ "$input" == http* ]]; then
+    echo "$input"
+  else
+    echo "$SITE_URL/r/$input"
+  fi
+}
+
 if [ "$START_STEP" -le 1 ]; then
-  echo "=== Step 1: spike/RESULTS.md ==="
-  cat "$RESULTS_MD"
-  open_file "$RESULTS_MD"
+  echo "=== Step 1: Live check on your phone ==="
+  echo "This step needs your phone — it's not something this script can do for you."
+  echo ""
+  echo "On your phone, open: $SITE_URL"
+  echo "Paste a claim and submit. Watch the countdown run; you should land on a /r/<id>"
+  echo "permalink with the report showing (this can take up to ~6 minutes for a contested"
+  echo "claim — the countdown itself explains that past 90s)."
+  read -rp $'\nOnce you land on the result, paste its URL or id here (or press Enter to skip): ' RESULT_INPUT
+  if [ -z "$RESULT_INPUT" ]; then
+    echo "No result entered — skipping. Steps 2 and 3 will ask again if you have a link later."
+  else
+    RESULT_URL=$(normalize_result_url "$RESULT_INPUT")
+    echo "Using: $RESULT_URL"
+  fi
   pause
 fi
 
 if [ "$START_STEP" -le 2 ]; then
-  echo "=== Step 2: Same-claim pairs (claude-sonnet-5 vs claude-haiku-4-5) ==="
-  PAIRS_JSON=$(node -e '
-const fs = require("fs");
-const dir = "spike/results";
-const files = fs.readdirSync(dir).filter(f => f.endsWith(".json"));
-const byClaim = new Map();
-for (const f of files) {
-  const data = JSON.parse(fs.readFileSync(dir + "/" + f, "utf8"));
-  const key = data.claim_text;
-  if (!byClaim.has(key)) byClaim.set(key, {});
-  byClaim.get(key)[data.model] = f.replace(/\.json$/, ".md");
-}
-const pairs = [];
-for (const [claim, models] of byClaim.entries()) {
-  if (models["claude-sonnet-5"] && models["claude-haiku-4-5"]) {
-    pairs.push({ claim, sonnet: models["claude-sonnet-5"], haiku: models["claude-haiku-4-5"] });
-  }
-}
-console.log(JSON.stringify(pairs));
-')
-
-  PAIR_COUNT=$(node -e "console.log(JSON.parse(process.argv[1]).length)" "$PAIRS_JSON")
-
-  if [ "$PAIR_COUNT" -eq 0 ]; then
-    echo "No same-claim pairs found."
-  else
-    node -e '
-  const pairs = JSON.parse(process.argv[1]);
-  pairs.forEach((p, i) => {
-    const excerpt = p.claim.length > 60 ? p.claim.slice(0, 60) + "..." : p.claim;
-    console.log(`${i + 1}. ${excerpt}`);
-  });
-  ' "$PAIRS_JSON"
-
-    read -rp $'\nPick a pair number (or press Enter to skip): ' PICK
-
-    if [ -z "$PICK" ]; then
-      echo "No pair selected — skipping."
-    else
-      SONNET_FILE=$(node -e "const pairs=JSON.parse(process.argv[1]); const i=parseInt(process.argv[2],10)-1; console.log(pairs[i] ? pairs[i].sonnet : '')" "$PAIRS_JSON" "$PICK")
-      HAIKU_FILE=$(node -e "const pairs=JSON.parse(process.argv[1]); const i=parseInt(process.argv[2],10)-1; console.log(pairs[i] ? pairs[i].haiku : '')" "$PAIRS_JSON" "$PICK")
-
-      if [ -z "$SONNET_FILE" ] || [ -z "$HAIKU_FILE" ]; then
-        echo "Invalid selection."
-      else
-        open_file "$RESULTS_DIR/$SONNET_FILE"
-        open_file "$RESULTS_DIR/$HAIKU_FILE"
-      fi
+  echo "=== Step 2: Same permalink, private window, laptop ==="
+  if [ -z "${RESULT_URL:-}" ]; then
+    read -rp $'\nEnter the /r/<id> URL or id from step 1 (or press Enter to skip): ' RESULT_INPUT
+    if [ -n "$RESULT_INPUT" ]; then
+      RESULT_URL=$(normalize_result_url "$RESULT_INPUT")
     fi
+  fi
+  if [ -z "${RESULT_URL:-}" ]; then
+    echo "No URL available — skipping."
+  else
+    echo "This needs a private/incognito window — not something this script can force open"
+    echo "reliably across browsers, so open one yourself and paste in:"
+    echo ""
+    echo "  $RESULT_URL"
+    echo ""
+    echo "Confirm it shows the same report and the same metadata (model, date, duration) as"
+    echo "step 1."
   fi
   pause
 fi
 
 if [ "$START_STEP" -le 3 ]; then
-  echo "=== Step 3: Run a new check on claude-sonnet-5 ==="
-  if [ ! -f "$KEY_FILE" ]; then
-    echo "Key file not found at $KEY_FILE — refusing to start."
-  else
-    read -rp $'\nEnter a claim to fact-check (or press Enter to skip): ' CLAIM
-    if [ -z "$CLAIM" ]; then
-      echo "No claim entered — skipping step 3."
-    else
-      echo "Running claude-sonnet-5 on this claim now."
-      echo "check.mjs prints nothing until it's fully done — there's no partial progress to"
-      echo "show, it is genuinely just waiting on the API the whole time. Past runs ranged from"
-      echo "~15s (easy claims) to ~6 min (contested claims needing many searches; see the S1-4"
-      echo "read-out). A heartbeat below every 20s just confirms the process is still alive."
-      START=$(date +%s)
-
-      (
-        while true; do
-          sleep 20
-          echo "... still working ($(( $(date +%s) - START ))s elapsed, no output to show yet)"
-        done
-      ) &
-      TICKER_PID=$!
-      trap 'kill "$TICKER_PID" >/dev/null 2>&1 || true' EXIT
-
-      set +e
-      ANTHROPIC_API_KEY="$(cat "$KEY_FILE")" node spike/check.mjs "$CLAIM" --model claude-sonnet-5
-      STATUS=$?
-      set -e
-
-      kill "$TICKER_PID" >/dev/null 2>&1 || true
-      wait "$TICKER_PID" 2>/dev/null || true
-      trap - EXIT
-
-      if [ "$STATUS" -ne 0 ]; then
-        echo "check.mjs exited with an error (status $STATUS)."
-      else
-        END=$(date +%s)
-        ELAPSED=$((END - START))
-        echo "Elapsed: ${ELAPSED}s"
-        if [ "$ELAPSED" -lt 180 ]; then
-          echo "Under three minutes."
-        else
-          echo "Over three minutes."
-        fi
-        NEW_REPORT=$(ls -t "$RESULTS_DIR"/*.md | head -n 1)
-        open_file "$NEW_REPORT"
-      fi
+  echo "=== Step 3: Text the link to one person ==="
+  if [ -z "${RESULT_URL:-}" ]; then
+    read -rp $'\nEnter the /r/<id> URL or id to text (or press Enter to skip): ' RESULT_INPUT
+    if [ -n "$RESULT_INPUT" ]; then
+      RESULT_URL=$(normalize_result_url "$RESULT_INPUT")
     fi
   fi
-  pause
+  if [ -z "${RESULT_URL:-}" ]; then
+    echo "No URL available — skipping."
+  else
+    echo "Text this link to one person and ask them to open it:"
+    echo ""
+    echo "  $RESULT_URL"
+  fi
+  read -rp $'\nPress Enter once they confirm they can see the report (or press Enter to skip this check)...' _
 fi
 
-echo "=== Step 4: S1-4 spike read-out ==="
-cat "$READOUT"
-open_file "$READOUT"
+if [ "$START_STEP" -le 4 ]; then
+  echo "=== Step 4: Failure fixtures (from S2-6) ==="
+  echo "Five stable permalinks. Four should render as a failed check with no verdict; one"
+  echo "(search_cap_hit) should render as a real verdict plus a search-budget note."
+  for entry in "${FIXTURES[@]}"; do
+    id="${entry%%|*}"
+    expectation="${entry#*|}"
+    url="$SITE_URL/r/$id"
+    echo ""
+    echo "--- $id ---"
+    echo "$expectation"
+    open_url "$url"
+    pause
+  done
+fi
+
+echo ""
+echo "Demo complete. Accepted when: all three views of one permalink match, every fixture"
+echo "renders as expected above, and (per the sprint file) the URL stays undisclosed beyond"
+echo "this demo until Sprint 3 is accepted."
