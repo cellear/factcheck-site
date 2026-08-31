@@ -47,6 +47,7 @@ audience and the "site runs the check" decision. One serverless function is the 
 | 15 | Model: **`claude-sonnet-5`**, confirmed after the spike (S1-4, 2026-08-28) — Luke: "we don't need Opus for this; Sonnet does it just fine." One API call per check, `web_search_20260209` as the tool (Haiku 4.5 would need the older `web_search_20250305` variant — moot, not selected). The spike found the two models at parity on settled and news claims, but Haiku certified false specifics as true on the one contested claim tested — the product's core case | decided | Haiku 4.5 as the shipped model |
 | 16 | Shutdown is a silent refusal with a plain "monthly budget reached" message; no notification to Luke in v1 | decided | — |
 | 17 | Result rendering: **verbatim markdown**, assembled from content blocks — join text blocks with no separator, turn `citations` into a Sources list, start at the first `# Fact-Check Report` line — decided with Luke, 2026-08-28 (S1-5) | decided | Structured/parsed rendering; a template keyed to specific headings |
+| 18 | Prompt caching: **enabled by default** in the real handler — system prompt sent as `[{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }]` (S3-7). S2-7's spike measured a cold cached call at $0.068 vs. $0.106 uncached, warm at $0.044 (−58%), same claim — cheaper even on a single use, since the 1.25× write premium is outweighed by 0.1× reads inside the request's own tool loop; savings shrink on search-heavy claims but it is never more expensive. Post-deploy (S3-7): a live check through the deployed Worker showed `cache_creation_input_tokens: 11815`, `cache_read_input_tokens: 27334`, `cost_usd: 0.09046` — confirmed live and billing correctly in production, not just the spike | decided | Sending the system prompt as a plain string |
 
 ### Capacity note on decision 9
 
@@ -56,6 +57,10 @@ production-shaped runs) at $0.11–$0.56, mean **$0.36** — about **55 checks/m
 cap, under 2 a day. Haiku 4.5 measured mean $0.05 — about **380 checks/month**. The cap remains
 the real capacity figure regardless of which model is picked; the site will visibly hit it if a
 link lands. See `spike/RESULTS.md` and the S1-4 handoff for the full numbers.
+
+**With prompt caching now live by default (decision 18, S3-7)**, mean cost per check is below
+this $0.36 figure — the exact new mean is unknown until enough real cached checks accumulate;
+the ~55 checks/month figure stands as the conservative floor until a real series exists.
 
 ### Citations note on decision 17
 
@@ -115,7 +120,9 @@ the branches in the diagram above and nothing else. Target: small enough to read
 **The bucket.** Two kinds of keys:
 - `result:<id>` — write once, never updated. Public to anyone with the id.
 - `spend:<yyyy-mm>` — running dollar total for the calendar month. The function refuses when
-  it is at or above the cap. Monthly reset is implicit (new key, new month).
+  it is at or above the cap. Monthly reset is implicit (new key, new month). Read-modify-write,
+  no compare-and-swap — a known, accepted race under concurrent traffic at this project's volume
+  (a dozen checks/day); not fixed in v1 (S3-2).
 
 **The skill.** `SKILL.md` from the upstream repo, vendored into this repo with its source
 commit recorded. It is the system prompt. When it changes upstream, someone updates the vendored
@@ -130,7 +137,7 @@ id, created_at, claim_text, report (verbatim assembled markdown, from the first
 `# Fact-Check Report` line), citations [{url, title, cited_text}],
 model, served_by_model, skill_commit, usage {input_tokens, output_tokens, searches},
 cost_usd, outcome (ok | refusal | tool_error | truncated | no_report),
-search_cap_hit, tool_errors, duration_ms
+search_cap_hit, refusal_category, tool_errors, duration_ms
 ```
 
 `outcome` exists because of the failure-handling rule below. `cost_usd` and `duration_ms` exist
@@ -139,10 +146,12 @@ so the spend counter and the countdown prediction are grounded in real numbers o
 in S2-2, `cited_text` is always `null`**: the current API behavior gives no per-result excerpt in
 this mode, so `citations[]` is a list of sources consulted (url + title), not sources actually
 quoted from. See the citations note under decision 17 below.
-`search_cap_hit` flags the one-line search-budget note. `served_by_model` records the model that
-actually generated the report, distinct from the requested `model` (relevant if a fallback is
-ever added later — none is used in v1). `tool_errors` records what the tool layer reported, if
-anything, before the check settled into its final outcome.
+`search_cap_hit` flags the one-line search-budget note. `refusal_category` (string or `null`,
+S3-3) is the `stop_details.category` from a refusal, so the result page can name it instead of a
+bare "declined." `served_by_model` records the model that actually generated the report, distinct
+from the requested `model` (relevant if a fallback is ever added later — none is used in v1).
+`tool_errors` records what the tool layer reported, if anything, before the check settled into
+its final outcome.
 
 ## Failure handling — a rule, not a preference
 
@@ -214,7 +223,9 @@ Latency) was the deciding constraint; S2-1 confirmed a real check survives it en
 - **Streaming the steps live** — deferred pending the spike. Would be a demonstration of the
   method's differentiator (step 4, source independence), which is the argument for revisiting it.
 - **Automatic sync with the upstream skill** — deliberate vendoring instead.
-- **Prompt caching** — untested; a Sprint 2 measurement, not a v1 feature.
+- **Per-IP rate limiting** — struck by Luke, 2026-08-31 (S3-6): spend is already contained by the
+  invite word, the hard cap, and manual per-check submission; a per-IP counter adds
+  administration without adding a new bound.
 
 ## Open questions
 
@@ -222,7 +233,8 @@ Latency) was the deciding constraint; S2-1 confirmed a real check survives it en
    2026-08-30, a real browser held a Cloudflare Workers request open the full six minutes and
    returned normally. Decision 14 stands.
 2. ~~Sonnet 5 or Haiku 4.5~~ — resolved by S1-4: `claude-sonnet-5` (decision 15).
-3. Per-IP rate limiting alongside the invite word — cheap, but is it wanted?
+3. ~~Per-IP rate limiting alongside the invite word~~ — resolved by S3-6: struck by Luke,
+   2026-08-31 (see "Not doing" above).
 4. ~~Does the result page show the model's full report verbatim, or a structured render of it?~~
    — resolved by S1-5: verbatim markdown, assembled (decision 17).
 
@@ -244,5 +256,6 @@ This document was written from the discovery conversation, not from that section
 
 ---
 
-Last updated: 2026-08-31 by Lila (claude-sonnet-5) — resolved open question 1 (S2-1) and added
-the citations note under decision 17 (S2-2), both via the S2-R retro
+Last updated: 2026-08-31 by Lila (claude-sonnet-5) — added decision 18 (prompt caching enabled
+by default, S3-7), refusal_category, the spend-counter race note, and resolved open question 3,
+via the S3-R retro

@@ -91,7 +91,36 @@ duplicates. One owner keeps it consistent and findable.
 **Consequence:** if you are not Lila and you think something belongs in DOC or LEARNINGS, hand
 it over as a list in your handoff. Do not edit the file yourself, even to fix something small.
 
+## A "Prompt for Next Assistant" gets a one-line mission summary in chat
+
+In the final chat message to Luke, immediately after the literal "Prompt for Next Assistant"
+code block (`AGENT.md`'s Ending a Session step 2), add a one-to-two sentence plain-English
+summary of the mission the prompt hands off — what the story actually builds or does, not the
+persona's standing role or boilerplate identity text — so Luke can confirm it's the right story
+before saying "go" without hunting through the prompt for it. The summary doesn't replace the
+full prompt; he can still read that for detail. Applies to every persona ending a session with a
+handoff. Luke asked for this directly, 2026-08-31.
+
+## Chaining through consecutive same-owner stories
+
+When a persona finishes a story and the next story (or several) in the sprint file are owned by
+that same persona, before starting the next one look ahead and, if there's more than one, ask
+Luke once: "the next N are all mine — want me to do them all?" If yes, continue directly into
+each subsequent story within the same session — no need to stop for a fresh launch prompt
+between them. Still write a full handoff for every individual story, including a normal "Prompt
+for Next Assistant" with its mission summary, and commit at the end of each one, same as if it
+were a separate session. When that next prompt is addressed to itself, the persona says so ("the
+next prompt is to me, so I'll continue") and carries on in the same session rather than stopping.
+Stop and ask if a story is genuinely blocked on information only Luke can supply — the earlier
+yes doesn't cover a real blocker. A single story with no same-owner story right after it is
+unaffected; proceed as normal. Luke asked for this directly, 2026-08-31.
+
+**Why both:** without a written convention to follow, a persona chaining through several
+same-owner stories will improvise its own shortcut and can drop a real requirement doing it —
+this happened in Sprint 3 before either convention made it into this file (see
+`LEARNINGS/sprint-3.md`).
+
 ---
 
-Last updated: 2026-08-31 by Lila (claude-sonnet-5) — recorded the standing per-story commit
-instruction and the Quinn-hands-off-to-Nadia rule (S2-R)
+Last updated: 2026-08-31 by Lila (claude-sonnet-5) — added the mission-summary and same-owner
+chaining conventions (overdue from S2-R, applied via S3-R)

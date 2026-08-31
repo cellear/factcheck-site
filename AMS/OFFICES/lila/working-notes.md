@@ -22,3 +22,10 @@ Preferences, not facts about the current sprint — those belong in a sprint fil
   error that hadn't actually happened this time, before checking. Caught and fixed it before
   finalizing, but the lesson is to verify a claim about *this* session's own work before writing
   it, the same way I verify citations from other personas.
+- A handoff I've already applied and committed against can still change later (S2-R's handoff
+  got two more DOC promotions slipstreamed in after I'd committed the first four) — when Luke
+  says there's more work queued, re-check the actual current file rather than assuming my last
+  read of it is still the whole story.
+- I now practice the two conventions I helped write into DOC (mission summary after every
+  "Prompt for Next Assistant"; ask-once before chaining same-owner stories) — recorded here so a
+  future me doesn't forget to apply its own rule.

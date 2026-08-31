@@ -1,32 +1,33 @@
 # Lila's Desk
 
-**Last active:** 2026-08-31 (S2-R)
+**Last active:** 2026-08-31 (S3-R)
 
 ## Where things stand
 
-Sprint 2 is fully closed — every story, including S2-R, is `[x]` in `AMS/SPRINTS/sprint-2.md`.
-`AMS/LEARNINGS/sprint-2.md` exists (six findings). `DOC/working-agreements.md` now records: (1)
-the standing per-story local-commit instruction (Luke, 2026-08-30/31), and (2) Quinn hands the
-demo off to Nadia for the live run — Quinn doesn't stay in the loop. `DOC/architecture.md` has
-the citations-come-from-raw-search-results correction (S2-2) and the Cloudflare hold test
-confirmation (S2-1), plus three stale cross-references that confirmation touched, cleaned up.
+Sprint 3 is fully closed — every story is `[x]` (S3-4, S3-6 correctly marked struck).
+`AMS/LEARNINGS/sprint-3.md` exists (four findings). `DOC/architecture.md` now has decision 18
+(prompt caching enabled by default, S3-7, with post-deploy numbers), `refusal_category` on the
+result record, the spend-counter race note, and per-IP rate limiting resolved/struck.
+`DOC/working-agreements.md` finally got the two conventions that were slipstreamed into S2-R but
+never applied (mission summary after every "Prompt for Next Assistant"; same-owner story
+chaining) — I'd already committed S2-R's DOC changes before those two were added to that
+handoff, so they sat overdue until Nadia's S3-R handoff carried them forward.
 
-Full detail: `AMS/HANDOFF/handoff-2026-08-31-s2-r-learnings-lila.md`.
+Full detail: `AMS/HANDOFF/handoff-2026-08-31-s3-r-learnings-lila.md`.
 
 ## Next
 
-Nothing queued. Sprint 3 planning is Archie's lane (`AMS/SPRINTS/sprint-3.md` already exists).
-
-**Open question for Luke, not yet answered:** does the new standing per-story commit instruction
-extend to my own DOC/LEARNINGS commits? I left this session's DOC/LEARNINGS edits uncommitted
-rather than assume either way.
+Nothing queued. Sprint 4 (possible fold-in from Sprint 3) is Archie's lane.
 
 ## Standing reminders
 
 - Communication between persona sessions routes through Luke — never message another persona's
   live session directly, even when asked to "pass along" something. Write the message, hand Luke
   the text to deliver himself. Learned the hard way, 2026-08-29.
-- When applying a handed-over list to a DOC file, verify any file citations in it before writing
-  (caught a wrong filename in S1-R's list), and re-read the whole file afterward for stale
-  cross-references the list didn't anticipate (caught three in S2-R, after confirming decision
-  14 — the table status and two other sections still said "pending").
+- I now follow two conventions I just wrote into DOC myself: give a one-line mission summary in
+  chat after any "Prompt for Next Assistant" I write, and ask Luke once before chaining through
+  consecutive same-owner stories rather than assuming.
+- When a handed-over handoff gets amended after I've already applied and committed part of it
+  (happened with S2-R: items 5/6 were added after I'd committed items 1-4), check the file's
+  actual current content before assuming a prior read is still complete — don't rely on memory
+  of what a handoff said if there's reason to think it might have changed.

@@ -61,7 +61,7 @@ remains to build.
 
 ---
 
-### S3-5 · Page copy · [ ]
+### S3-5 · Page copy · [x]
 
 **Owner:** Sandy · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S2-4, S2-5
 
@@ -70,8 +70,9 @@ remains to build.
 - Result page: the method caveat from `SKILL.md`, model and date shown plainly; failed-check wording for each `outcome`
 
 **Acceptance criteria:**
-- [ ] Luke reads both pages and accepts the wording — copy drafted and deployed (Cody, see
-  handoff for the exact wording); this box is Luke's to tick, not mine
+- [x] Luke reads both pages and accepts the wording — copy drafted and deployed (Cody, see
+  handoff for the exact wording); read and accepted by Luke during the Sprint 3 live demo,
+  2026-08-31
 
 ---
 
@@ -111,7 +112,7 @@ this: "Luke may strike this story.")
 
 ---
 
-### S3-8 · Sprint 3 demo runner and dry-run · [ ]
+### S3-8 · Sprint 3 demo runner and dry-run · [x]
 
 **Owner:** Quinn · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S3-1, S3-2, S3-5, S3-7
 
@@ -127,13 +128,13 @@ this: "Luke may strike this story.")
   live run and the acceptance verdict — Quinn's session ends there
 
 **Acceptance criteria:**
-- [ ] Quinn's dry-run happened before the live run and its result is in Quinn's handoff
-- [ ] The handoff's Prompt for Next Assistant is addressed to Nadia, who runs the live demo
+- [x] Quinn's dry-run happened before the live run and its result is in Quinn's handoff
+- [x] The handoff's Prompt for Next Assistant is addressed to Nadia, who runs the live demo
       with Luke and records the verdict
 
 ---
 
-### S3-R · Retro and records · [ ]
+### S3-R · Retro and records · [x]
 
 **Owner:** Nadia (runs it) and Lila (writes it) · **Model:** `claude-sonnet-5` · **Size:** s · **Depends on:** sprint accepted
 
@@ -142,8 +143,8 @@ this: "Luke may strike this story.")
 - Lila writes `LEARNINGS/sprint-3.md` and applies any DOC updates Nadia or Archie handed over
 
 **Acceptance criteria:**
-- [ ] `LEARNINGS/sprint-3.md` exists
-- [ ] No DOC edits were made by anyone but Lila
+- [x] `LEARNINGS/sprint-3.md` exists
+- [x] No DOC edits were made by anyone but Lila
 
 ---
 
@@ -190,9 +191,11 @@ this file.
 
 ## Acceptance
 
-**Status:** Pending
-**Date:**
-**Reviewed by:** Luke
+**Status:** Accepted
+**Date:** 2026-08-31
+**Reviewed by:** Luke — ran `./demo.sh` end to end (wrong invite word, spend-cap flip, `/spend`,
+tool_error/refusal fixtures, sent to three people) and read/accepted the S3-5 page copy;
+confirmed everything passed.
 
 ---
 
