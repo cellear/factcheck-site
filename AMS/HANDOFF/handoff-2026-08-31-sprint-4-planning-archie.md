@@ -32,12 +32,19 @@ Sprints 1–3's decisions, at Luke's direction, while Sprint 3 is mid-flight:
   Quinn/Nadia/Lila/Sandy sessions of 2026-08-31 are uncommitted on disk. Luke decides who
   commits them; flagged, not fixed.
 
-## Current state
+## Current state — amended same session
 
-Sprint 3 mid-flight: S3-1 done and deployed (Sandy); next is **Cody S3-2 + S3-3 + S3-7 in one
-session** — prompt ready at the end of
-`AMS/HANDOFF/handoff-2026-08-31-s3-1-complete-sandy.md`. Then Sandy S3-5, Quinn S3-8, Nadia
-live demo. Sprint 4 is planned and waiting; S4-3 optionally sooner.
+The "mid-flight" framing above was stale within the hour it was written: **Sprint 3 closed
+completely on 2026-08-31** (Cody S3-2/3/5/7, Quinn S3-8, Nadia ran the live demo and recorded
+acceptance — first end-to-end run of the Quinn→Nadia convention — retro and S3-R done, all my
+held DOC corrections applied by Lila including decision 18). The site is in use: invite word,
+spend cap, caching, page copy all live.
+
+**Therefore all of Sprint 4 is unblocked** (S4-1/S4-2 depended on S3-2, which is done).
+Suggested order, using the new same-owner chaining convention:
+**Sandy S4-2 + S4-3 in one session** → **Lila S4-1** (runbook last so it names the final
+domain) → **Quinn S4-4** → **Nadia live demo**. Sprint 4 is the closing sprint; its
+acceptance includes the project-level handoff and final retro.
 
 ## Files created or modified
 
@@ -50,7 +57,34 @@ live demo. Sprint 4 is planned and waiting; S4-3 optionally sooner.
 
 ## Prompt for Next Assistant
 
-Unchanged from Sandy's S3-1 handoff: **Cody**, `claude --model claude-sonnet-5`, running
-S3-2 + S3-3 + S3-7 — paste the prompt from
-`AMS/HANDOFF/handoff-2026-08-31-s3-1-complete-sandy.md` (Luke already has it in that file's
-final section; it is correct as written, including the cache-rates requirement).
+Persona: **Sandy (Junior Engineer)**. Model: `claude-haiku-4-5`. Tool:
+`claude --model claude-haiku-4-5`.
+
+```
+You are Sandy, the Junior Engineer. Do not guess or change this.
+
+Read AMS/OFFICES/sandy/desk.md FIRST, then AMS/AGENT.md and follow it. Then read
+AMS/CONFIG.md, AMS/SPRINTS/sprint-4.md (your stories are S4-2 and S4-3),
+DOC/working-agreements.md (Commits; the same-owner chaining convention — you run both
+stories in this one session), and
+AMS/HANDOFF/handoff-2026-08-31-sprint-4-planning-archie.md.
+
+S4-2 · Calibrate the countdown:
+- Prediction = median duration_ms of the month's completed (outcome: ok) records, replacing
+  the constant 90s; overflow message behavior unchanged
+- If listing result:* KV keys is awkward, keep a small running-durations key alongside
+  spend:<yyyy-mm> — your call, note it in the handoff
+- Acceptance: countdown shown matches the median of stored durations within 10%
+
+S4-3 · Custom domain:
+- Write the steps for attaching Luke's domain to the Pages project; Luke performs them (ask
+  him which domain). Acceptance: the site answers on the final domain over HTTPS
+- If Luke isn't ready with a domain, do S4-2, write the S4-3 steps anyway, and mark S4-3
+  blocked-on-Luke in your handoff rather than waiting
+
+Constraints: do not touch AMS/DOC/, AMS/LEARNINGS/, spike/, demo.sh, or story text beyond
+your own checkboxes. Commit your work locally at session end. AGENTS NEVER PUSH. Update your
+office. Write a handoff whose Prompt for Next Assistant is addressed to Lila (S4-1, the
+runbook — she should write it against the final domain), with a mission-summary line after
+it per DOC/working-agreements.md.
+```
