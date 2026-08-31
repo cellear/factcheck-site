@@ -108,7 +108,7 @@
 
 ---
 
-### S2-6 · Failure fixture · [ ]
+### S2-6 · Failure fixture · [x]
 
 **Owner:** Sandy · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S2-2
 
@@ -117,8 +117,8 @@
 - The seeded tool_error fixture doubles as the classifier test that S1-2's forced-error run used to provide (a synthesized message with a non-`max_uses_exceeded` error code) — the old `max_uses: 1` trick no longer produces `tool_error` under the reclassification
 
 **Acceptance criteria:**
-- [ ] Luke can open a permalink for each failure kind (refusal, tool_error, truncated, no_report) and see it rendered as a failed check
-- [ ] The `search_cap_hit` fixture renders as a verdict WITH the one-line search-budget note
+- [x] Luke can open a permalink for each failure kind (refusal, tool_error, truncated, no_report) and see it rendered as a failed check — `worker/fixtures/seed.mjs` seeds all 5 (4 failure kinds + search_cap_hit) via KV writes, no spend; all 5 permalinks verified in-browser
+- [x] The `search_cap_hit` fixture renders as a verdict WITH the one-line search-budget note — verified: full report, Sources list, and "Search budget reached; this report is based on 5 searches." all render together
 
 ---
 
