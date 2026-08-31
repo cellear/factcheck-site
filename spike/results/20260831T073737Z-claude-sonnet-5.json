@@ -1,0 +1,23 @@
+{
+  "created_at": "2026-08-31T07:37:12.484Z",
+  "claim_text": "The Eiffel Tower was completed in 1889 in Paris, built as the entrance arch for that year's World's Fair (Exposition Universelle), and was originally intended to be a temporary structure.",
+  "model": "claude-sonnet-5",
+  "served_by_model": "claude-sonnet-5",
+  "skill_commit": "73a08409365b4b07e204989d60682f9de1a2d26a",
+  "forced_tool_error": false,
+  "outcome": "ok",
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "used_fallback": false,
+  "duration_ms": 24665,
+  "usage": {
+    "input_tokens": 143,
+    "output_tokens": 1124,
+    "cache_creation_input_tokens": 2376,
+    "cache_read_input_tokens": 34089,
+    "searches": 2
+  },
+  "cost_usd": 0.044284,
+  "tool_errors": [],
+  "report": "That's a well-established, uncontroversial historical fact, and the search results confirm all three parts of the claim.\n\n## Triage: Uncontroversial\n\nThis is settled historical fact with no meaningful dispute, so a full fact-check with source-independence analysis isn't really necessary — but here's a quick confirmation:\n\n**1. Completed in 1889 in Paris:** Confirmed. \n\nDesigned by Gustave Eiffel, the tower was completed in 1889 for the Exposition Universelle (World's Fair) held in Paris to celebrate the 100th anniversary of the French Revolution.\n\n\n\n**2. Built as the entrance arch/main attraction for the 1889 World's Fair:** Confirmed. \n\nIt was built to be the main attraction of the 1889 Paris Exposition, a world's fair to celebrate the 100th anniversary of the beginning of French Revolution.\n\n\n\n**3. Originally intended as a temporary structure:** Confirmed. \n\nThe tower, built in just about 26 months from 1887 to 1889, was originally supposed to be a temporary structure.\n\n One source adds that \n\nthe tower was intended to be a temporary structure, with plans to dismantle it after the fair concluded.\n\n\n\nAs a bonus fact confirmed by the search: at the time of completion, \n\nthe resulting Eiffel Tower, constructed from wrought iron, was the tallest structure in the world at the time of its completion\n\n — surpassing the Washington Monument.\n\n**Bottom line:** All three parts of your statement are accurate and well-documented by multiple independent, reliable sources (Library of Congress, Britannica, ArchDaily). No fact-checking concerns here — this is standard, uncontroversial history. If you'd like, I can look into *why* it was almost torn down but ultimately saved (a more nuanced sub-story), just let me know."
+}

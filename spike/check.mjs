@@ -33,6 +33,7 @@ const MODELS_SUPPORTING_FALLBACKS = new Set([]);
 function parseArgs(argv) {
   let model = DEFAULT_MODEL;
   let forceToolError = false;
+  let cache = false;
   const claimParts = [];
 
   for (let i = 0; i < argv.length; i++) {
@@ -41,6 +42,8 @@ function parseArgs(argv) {
       model = argv[++i];
     } else if (arg === "--force-tool-error") {
       forceToolError = true;
+    } else if (arg === "--cache") {
+      cache = true;
     } else {
       claimParts.push(arg);
     }
@@ -48,7 +51,9 @@ function parseArgs(argv) {
 
   const claim = claimParts.join(" ").trim();
   if (!claim) {
-    console.error('Usage: node spike/check.mjs "<claim>" [--model <id>] [--force-tool-error]');
+    console.error(
+      'Usage: node spike/check.mjs "<claim>" [--model <id>] [--force-tool-error] [--cache]',
+    );
     process.exit(1);
   }
   if (!PRICES_USD_PER_MTOK[model]) {
@@ -58,7 +63,7 @@ function parseArgs(argv) {
     process.exit(1);
   }
 
-  return { claim, model, forceToolError };
+  return { claim, model, forceToolError, cache };
 }
 
 function webSearchTool(model, forceToolError) {
@@ -136,7 +141,7 @@ function timestampSlug() {
 }
 
 async function main() {
-  const { claim, model, forceToolError } = parseArgs(process.argv.slice(2));
+  const { claim, model, forceToolError, cache } = parseArgs(process.argv.slice(2));
   const skillMd = readFileSync(join(REPO_ROOT, "skill", "SKILL.md"), "utf8");
   const skillCommit = readSkillCommit();
 
@@ -152,11 +157,20 @@ async function main() {
     ? `${claim}\n\n(For this check, run at least two separate web searches on different sub-claims or sources before writing your report.)`
     : claim;
 
+  // S2-7: does prompt caching reduce billed input tokens inside the server-tool
+  // loop? Behind a flag so default behavior (a plain string system prompt) is
+  // unchanged when --cache is not passed. SKILL.md is the largest stable prefix
+  // by a wide margin (tens of thousands of tokens vs. one small tool definition),
+  // so that's the only block marked cacheable here.
+  const system = cache
+    ? [{ type: "text", text: skillMd, cache_control: { type: "ephemeral" } }]
+    : skillMd;
+
   const supportsFallbacks = MODELS_SUPPORTING_FALLBACKS.has(model);
   const baseParams = {
     model,
     max_tokens: 8192,
-    system: skillMd,
+    system,
     tools: [webSearchTool(model, forceToolError)],
     messages: [{ role: "user", content: userContent }],
   };
@@ -256,7 +270,7 @@ async function main() {
   writeFileSync(mdPath, mdLines.join("\n") + "\n", "utf8");
   writeFileSync(jsonPath, JSON.stringify(record, null, 2) + "\n", "utf8");
 
-  console.log(`outcome=${outcome} stop_reason=${finalMessage.stop_reason} duration_ms=${durationMs} cost_usd=${record.cost_usd} searches=${searches}`);
+  console.log(`outcome=${outcome} stop_reason=${finalMessage.stop_reason} duration_ms=${durationMs} cost_usd=${record.cost_usd} searches=${searches} cache_read_input_tokens=${record.usage.cache_read_input_tokens} cache_creation_input_tokens=${record.usage.cache_creation_input_tokens}`);
   console.log(`report: ${mdPath}`);
   console.log(`record: ${jsonPath}`);
 }

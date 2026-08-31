@@ -1,0 +1,23 @@
+{
+  "created_at": "2026-08-31T07:37:45.905Z",
+  "claim_text": "The Eiffel Tower was completed in 1889 in Paris, built as the entrance arch for that year's World's Fair (Exposition Universelle), and was originally intended to be a temporary structure.",
+  "model": "claude-sonnet-5",
+  "served_by_model": "claude-sonnet-5",
+  "skill_commit": "73a08409365b4b07e204989d60682f9de1a2d26a",
+  "forced_tool_error": false,
+  "outcome": "ok",
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "used_fallback": false,
+  "duration_ms": 30380,
+  "usage": {
+    "input_tokens": 35990,
+    "output_tokens": 1359,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "searches": 2
+  },
+  "cost_usd": 0.10557,
+  "tool_errors": [],
+  "report": "This claim is accurate and well-supported by historical sources. Here's a quick verification:\n\n**Completion date and purpose:** \n\nThe tower was built in just about 26 months from 1887 to 1889, and it was built to be the main attraction of the 1889 Paris Exposition, a world's fair to celebrate the 100th anniversary of the beginning of the French Revolution\n\n.\n\n**Location and exposition details:** \n\nThe Exposition Universelle of 1889 was a significant world's fair held in Paris to commemorate the centennial of the French Revolution, running from May to October and celebrating modern achievements in arts, architecture, and technology\n\n. The tower served as its centerpiece — \n\nthe exposition showcased contributions from nations around the world, with the newly constructed Eiffel Tower as its centerpiece\n\n.\n\n**Temporary structure intent:** \n\nIt was supposed to be a temporary installation for the 1889 World Fair, held at Paris to show respect to 100 years of the French Revolution. In 1909, there were discussions regarding the potential dismantling of the Eiffel Tower\n\n, but \n\nthe decision to save this iconic structure was ultimately reached by city officials, who acknowledged its importance\n\n.\n\n**Precise completion date:** \n\nThe record-breaking structure was completed on 31 March 1889 and the Tower opened to the public on 15 May\n\n.\n\nOne small nuance worth noting: the tower functioned as the grand **entrance gateway/archway** to the 1889 Exposition Universelle grounds (visitors passed through/under it to enter the fair) rather than a literal freestanding \"entrance arch\" monument — but this is a minor phrasing distinction, and the substance of your statement is correct.\n\n**Bottom line:** All parts of your claim — the 1889 completion date, Paris location, connection to the World's Fair, and originally intended temporary status — are well-documented historical facts, consistent across encyclopedic and institutional sources (Library of Congress, EBSCO, and the official Expo history site). This is an uncontroversial, well-established historical fact rather than a disputed claim."
+}

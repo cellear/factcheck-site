@@ -122,7 +122,7 @@
 
 ---
 
-### S2-7 · Prompt-caching measurement · [ ]
+### S2-7 · Prompt-caching measurement · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** s · **Depends on:** none
 
@@ -136,8 +136,8 @@
   recording to Lila
 
 **Acceptance criteria:**
-- [ ] A run's measured `cache_read_input_tokens` (zero or not) and spend are in the handoff
-- [ ] `spike/check.mjs` default behavior is unchanged when the flag is off
+- [x] A run's measured `cache_read_input_tokens` (zero or not) and spend are in the handoff — three real runs measured (two cached, one uncached control); see Cody's handoff for the full numbers
+- [x] `spike/check.mjs` default behavior is unchanged when the flag is off — verified: the uncached control run showed `cache_read_input_tokens=0`, `cache_creation_input_tokens=0`, `input_tokens=35990` (the full prompt, unchanged from pre-S2-7 behavior)
 
 ---
 
@@ -193,6 +193,10 @@ Luke runs **`./demo.sh`** (Quinn's Sprint 2 runner, S2-8) which guides him throu
 
 ## Decisions Made This Sprint
 
+- **S2-7 measured** (2026-08-31): prompt caching on the system prompt (SKILL.md) substantially
+  cuts cost inside the server-tool loop — uncached $0.10557/check vs. $0.044284/check with a
+  warm cache (58% cheaper). No conclusion drawn here on whether to enable it by default in
+  S2-2's real handler — that decision is Archie's; numbers are in Cody's handoff.
 - **Decision 14 confirmed** (S2-1, 2026-08-30): Cloudflare Workers held a real browser request
   open for the full six minutes and returned normally; hosting stack (Pages + Workers + KV)
   stands as decided. DOC update handed to Lila in Cody's handoff.
