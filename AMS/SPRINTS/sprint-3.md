@@ -70,7 +70,8 @@ remains to build.
 - Result page: the method caveat from `SKILL.md`, model and date shown plainly; failed-check wording for each `outcome`
 
 **Acceptance criteria:**
-- [ ] Luke reads both pages and accepts the wording
+- [ ] Luke reads both pages and accepts the wording — copy drafted and deployed (Cody, see
+  handoff for the exact wording); this box is Luke's to tick, not mine
 
 ---
 

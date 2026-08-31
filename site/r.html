@@ -41,6 +41,12 @@
     font-size: 0.85em;
     opacity: 0.75;
   }
+  .caveat {
+    font-size: 0.85em;
+    opacity: 0.75;
+    font-style: italic;
+    margin: 1.5rem 0 0;
+  }
   a { color: inherit; }
   #content pre, #content code { white-space: pre-wrap; }
 </style>
@@ -113,6 +119,13 @@
       `;
     }
 
+    // S3-5: a structural caveat, not left to the model to remember to include in every
+    // report — matches SKILL.md's own instruction ("Always remind users that AI can make
+    // mistakes and they should verify important claims").
+    const METHOD_CAVEAT =
+      "This check was produced by an AI model and can contain mistakes. For anything " +
+      "decision-critical, verify against primary sources directly.";
+
     function renderOk(record) {
       const searchCapNote = record.search_cap_hit
         ? `<p class="search-cap-note">Search budget reached; this report is based on 5 searches.</p>`
@@ -123,6 +136,7 @@
         ${searchCapNote}
         <div class="report">${reportHtml}</div>
         ${renderSources(record.citations)}
+        <p class="caveat">${escapeHtml(METHOD_CAVEAT)}</p>
         ${renderMeta(record)}
       `;
     }

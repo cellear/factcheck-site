@@ -13,8 +13,14 @@ real handler. All verified live against the deployed Worker.
 `/spend` (S3-2), refusal category (S3-3), prompt caching (S3-7). `SPEND_CAP_USD` secret is set
 to `20` (normal state) after testing the 0.01→refuse→20→restore cycle live.
 
-**Next up: S3-5 (page copy)** — taking this over from Sandy per Luke's direction. Depends on
-S2-4/S2-5 (both done).
+**S3-5 (page copy) done too** — taking it over from Sandy per Luke's direction. Privacy line on
+the form now states results are public to anyone with the link; result page gets a static
+method caveat (not left to the model to remember). Implementation is complete and deployed; the
+AC itself ("Luke reads both pages and accepts the wording") is his to tick, not mine — left
+unchecked in `sprint-3.md` pending that.
+
+**All four stories Luke asked for (S3-2, S3-3, S3-5, S3-7) are done.** Only S3-8 (Quinn) and
+S3-R (Nadia/Lila) remain in Sprint 3.
 
 **For Lila**, carried in the S3-2/S3-3/S3-7 handoff: S3-7's post-deploy confirmation numbers
 (cache fields nonzero, cost billed correctly in production); a new `refusal_category` field on
