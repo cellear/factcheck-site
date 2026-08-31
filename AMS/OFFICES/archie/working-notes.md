@@ -36,3 +36,7 @@ Preferences, not facts about the current sprint — those belong in a sprint fil
   is another's input, the handoff's "Prompt for Next Assistant" is the channel.
 - **Staff QA from the start** on any project that demos each sprint — Luke called the omission
   a mistake. Sprint plans I write should list Quinn in the roster before sprint 1.
+- **Luke is often on his phone; push, don't paginate** (2026-08-31). When something reaches a
+  milestone or blocks on him, send a one-line push notification ("Archie: S3-1 done, Cody
+  prompt ready") — Siri reads it to him. Keep the detail on screen for when he chooses to
+  look. Never push routine progress.
