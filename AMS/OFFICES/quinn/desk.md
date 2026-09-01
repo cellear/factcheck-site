@@ -4,23 +4,25 @@
 
 ## Where things stand
 
-S3-8 done: Sprint 3's `demo.sh` replaces the Sprint 2 version, guiding through the five demo
-steps (wrong invite word, spend-cap flip via `wrangler secret put`, `/spend`, the tool_error and
-refusal fixtures, sending to three people). Steps that flip production secrets print the exact
-command rather than running it. Dry-ran everything I could without spending or needing other
-people: re-verified `fixture-tool-error` and `fixture-refusal` render correctly (the latter now
-shows the refusal category S3-3 added), confirmed the form page shows S3-5's updated copy,
-confirmed `/spend` gates a wrong invite word (403, no spend), and exercised the script's own
-mechanics (full-skip, start-step jump, id normalization) with piped input — all clean, `git
-status` showed only `demo.sh` modified.
+S4-4 done: Sprint 4's `demo.sh` is a three-step runner testing whether Luke can operate the
+site using only `DOC/runbook.md` — change the invite word (task 2), confirm the site works on
+its current (.dev, since S4-3 is deferred) domain, and read this month's spend (task 5). Per
+S4-4's scope, the runbook-driven steps point at the task number in the runbook rather than
+restating the command — spelling out the command would undercut the point of testing whether
+the runbook alone is enough.
 
-**Per `DOC/working-agreements.md`'s Quinn-hands-off-to-Nadia rule** (added 2026-08-31 after
-Luke corrected me on Sprint 2's handoff): my job stopped at the verified dry-run. I did not run
-the live demo with Luke and did not touch the sprint's Acceptance section — handed off straight
-to Nadia with an addressed prompt in this session's handoff.
+Dry-ran the mechanics (full-skip, `./demo.sh 3` jump, `--help`) — all clean, `git status`
+showed only `demo.sh` modified. Also spot-checked the live site/worker/`/spend` gate are still
+up (200/200/403 as expected) before finalizing.
+
+**One thing flagged, not fixed by me:** the sprint's demo table says step 1 "changes the invite
+word and redeploys," but `DOC/runbook.md` task 2 doesn't call for a redeploy (a secret takes
+effect on the next request — no code changes, nothing to redeploy). Not a blocking failure
+(redeploying anyway is harmless), so I didn't file it as a fix story, but I put a note in
+`demo.sh`'s step 1 output so it doesn't read as Luke missing a step, and flagged it in my
+handoff for Nadia/Luke's awareness.
 
 ## Next
 
-Nothing further from me. Nadia runs the live demo with Luke (steps 1, 2, and 5 need him live;
-step 2 also needs him to run two `wrangler secret put` commands himself) and records the
-verdict. I pick up again once Sprint 4 (or a Sprint 3 fix-story round) has a demo table.
+Nothing further from me. Handed off to Nadia (per the standing `DOC/working-agreements.md`
+rule) for Luke's live run and the acceptance verdict.

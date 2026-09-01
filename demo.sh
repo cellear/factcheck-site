@@ -2,11 +2,10 @@
 set -euo pipefail
 
 SITE_URL="https://factcheck-site.pages.dev"
-WORKER_URL="https://factcheck-worker.lm2000.workers.dev"
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   echo "Usage: ./demo.sh [start-step]"
-  echo "  start-step: 1-5, default 1. Jump straight to a step instead of re-running earlier"
+  echo "  start-step: 1-3, default 1. Jump straight to a step instead of re-running earlier"
   echo "  ones you've already seen."
   exit 0
 fi
@@ -26,77 +25,35 @@ open_url() {
 }
 
 if [ "$START_STEP" -le 1 ]; then
-  echo "=== Step 1: Wrong invite word ==="
-  echo "On the site below, submit a claim with the WRONG invite word."
-  echo "Expected: refused immediately, no spend."
-  open_url "$SITE_URL"
+  echo "=== Step 1: Change the invite word ==="
+  echo "Using ONLY DOC/runbook.md (task 2, 'Change the invite word') — no other help — rotate"
+  echo "the invite word."
+  echo "Expected: the OLD word is now refused (403, no spend); the NEW word works."
+  echo ""
+  echo "(Note: task 2 doesn't call for a redeploy — a secret takes effect on the next request."
+  echo "The sprint file's demo table says 'changes the invite word and redeploys'; if you also"
+  echo "redeploy it's harmless, just not required by the runbook as written — worth Nadia/Luke"
+  echo "knowing this so the wording doesn't read as a missed step.)"
   pause
 fi
 
 if [ "$START_STEP" -le 2 ]; then
-  echo "=== Step 2: Spend cap ==="
-  echo "This flips a production secret. Run this yourself — this script never writes to"
-  echo "production config for you:"
-  echo ""
-  echo "  cd worker && npx wrangler secret put SPEND_CAP_USD"
-  echo "  (enter 0.01 when prompted)"
-  pause
-  echo ""
-  echo "Now submit a claim with the CORRECT invite word on the site below."
-  echo "Expected: 'Monthly budget reached' page, no new spend."
+  echo "=== Step 2: Open the site ==="
+  echo "The custom domain (S4-3) is deferred — Luke is using the .dev URL for now, so this is"
+  echo "the 'final domain' for this sprint's demo."
   open_url "$SITE_URL"
-  pause
-  echo ""
-  echo "Restore the cap:"
-  echo ""
-  echo "  cd worker && npx wrangler secret put SPEND_CAP_USD"
-  echo "  (enter 20 when prompted)"
-  pause
-  echo ""
-  echo "Submit one more claim with the correct invite word — it should complete normally."
+  echo "Confirm it works."
   pause
 fi
 
 if [ "$START_STEP" -le 3 ]; then
-  echo "=== Step 3: /spend ==="
-  read -rp $'\nEnter your invite word to build the /spend link (or press Enter to skip): ' WORD
-  if [ -z "$WORD" ]; then
-    echo "No word entered — skipping."
-  else
-    open_url "$WORKER_URL/spend?invite_word=$WORD"
-    echo "Confirm the total matches your records."
-  fi
-  pause
-fi
-
-if [ "$START_STEP" -le 4 ]; then
-  echo "=== Step 4: tool_error and refusal fixtures ==="
-  echo "Both should render as a failed check — no verdict."
-  for id in fixture-tool-error fixture-refusal; do
-    echo ""
-    echo "--- $id ---"
-    open_url "$SITE_URL/r/$id"
-    pause
-  done
-  read -rp $'\nDid a real refusal happen this sprint? Paste its /r/<id> or id to view it too (or press Enter to skip): ' REAL_REFUSAL
-  if [ -n "$REAL_REFUSAL" ]; then
-    if [[ "$REAL_REFUSAL" == http* ]]; then
-      REAL_URL="$REAL_REFUSAL"
-    else
-      REAL_URL="$SITE_URL/r/$REAL_REFUSAL"
-    fi
-    open_url "$REAL_URL"
-    pause
-  fi
-fi
-
-if [ "$START_STEP" -le 5 ]; then
-  echo "=== Step 5: Send to three people ==="
-  echo "Send $SITE_URL and the invite word to three people. Each should complete a check and"
-  echo "forward a permalink back to you."
+  echo "=== Step 3: Read this month's spend ==="
+  echo "Using ONLY DOC/runbook.md (task 5, 'Read this month's spend') — no other help — find"
+  echo "this month's total."
+  echo "Expected: a number comes back."
   pause
 fi
 
 echo ""
-echo "Demo complete. Accepted when: all five steps happened as written, and the site is now in"
-echo "use."
+echo "Demo complete. Accepted when: Luke did all three without help, the closing project"
+echo "handoff is written, Nadia runs the final retro, and Lila writes LEARNINGS/sprint-4.md."
