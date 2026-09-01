@@ -57,7 +57,7 @@
 
 ---
 
-### S4-4 · Sprint 4 demo runner and dry-run · [ ]
+### S4-4 · Sprint 4 demo runner and dry-run · [x]
 
 **Owner:** Quinn · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S4-1, S4-2, S4-3
 
@@ -70,8 +70,8 @@
 - Hand off to **Nadia** for Luke's live run and the acceptance verdict
 
 **Acceptance criteria:**
-- [ ] Dry-run precedes the live run and is recorded in Quinn's handoff
-- [ ] The handoff's Prompt for Next Assistant is addressed to Nadia
+- [x] Dry-run precedes the live run and is recorded in Quinn's handoff
+- [x] The handoff's Prompt for Next Assistant is addressed to Nadia
 
 ---
 
@@ -98,7 +98,7 @@ this file.
 
 | # | Luke does | Expected |
 |---|---|---|
-| 1 | Luke, reading only `DOC/runbook.md`, changes the invite word and redeploys. | New word works; old word is refused. He asked nobody. |
+| 1 | Luke, reading only `DOC/runbook.md`, changes the invite word (no redeploy needed — a Worker secret takes effect on the next request). | New word works; old word is refused. He asked nobody. |
 | 2 | Luke opens the site on its final domain. | It works. |
 | 3 | Luke reads this month's spend. | A number, found via the runbook. |
 
@@ -123,9 +123,11 @@ this file.
 
 ## Acceptance
 
-**Status:** Pending
-**Date:**
-**Reviewed by:** Luke
+**Status:** Accepted
+**Date:** 2026-08-31
+**Reviewed by:** Luke — ran `./demo.sh` end to end (invite word changed via `DOC/runbook.md`
+alone, site confirmed working on the `.dev` domain, spend read via the runbook alone); called it
+a pass.
 
 ---
 
