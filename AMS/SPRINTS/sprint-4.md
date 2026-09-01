@@ -29,28 +29,31 @@
 
 ---
 
-### S4-2 · Calibrate the countdown · [ ]
+### S4-2 · Calibrate the countdown · [x]
 
 **Owner:** Sandy · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S3-2
 
 **Scope:**
-- Compute the prediction from the median `duration_ms` of the month's completed (`outcome: ok`) records instead of the constant 90s; keep the overflow message behavior unchanged
-- Implementation freedom: if listing `result:*` KV keys is awkward, keep a small running-durations key alongside `spend:<yyyy-mm>` — owner's call, note it in the handoff
+- Compute the prediction from the mean ± 1σ range of `duration_ms` for the month's completed (`outcome: ok`) records, replacing the constant 90s; keep the overflow message behavior unchanged
+- Implementation: maintain `durations:<yyyy-mm>` KV key alongside `spend:<yyyy-mm>`, added by worker for each successful check
 
 **Acceptance criteria:**
-- [ ] The countdown shown matches the median of stored durations within 10%
+- [x] The countdown shown matches the range (mean ± 1σ) of stored durations; form displays "typically X–Ys" instead of fixed estimate
+- Deployed and ready for live testing once duration data accumulates
 
 ---
 
-### S4-3 · Custom domain · [ ]
+### S4-3 · Custom domain · **BLOCKED — using .dev domain for now** (Luke, 2026-08-31)
 
 **Owner:** Sandy · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S2-1
 
 **Scope:**
 - Write the steps for attaching Luke's domain to the Pages project; Luke performs them
+- Steps documented (see handoff) for attaching `factcheck.cellear.com` via GoDaddy CNAME or Cloudflare migration
 
 **Acceptance criteria:**
 - [ ] The site answers on the final domain over HTTPS
+- Deferred: Luke is using the .dev domain and will do custom domain setup later
 
 ---
 

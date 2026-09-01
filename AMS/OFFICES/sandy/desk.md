@@ -4,13 +4,16 @@
 
 ## Where things stand
 
-**S3-1 complete.** Invite word validation is deployed and verified:
-- worker/src/index.js: POST /check requires invite_word, returns 403 before API call if wrong/missing ✓
-- site/index.html: Form field with localStorage persistence ✓
-- Deployed to production and tested (wrong word → 403, right word → proceeds) ✓
+**S4-2 complete.** Countdown calibration deployed:
+- worker: tracks durations for outcome:ok checks in `durations:<yyyy-mm>` KV key
+- worker: new GET /durations endpoint returns mean ± 1σ range (lower/upper bounds)
+- form: displays "typically X–Ys" instead of fixed 90s, fetches stats on submit
+- Deployed to production, ready for live testing as duration data accumulates
 
-Commit: b2acaac
+**S4-3 blocked on Luke.** Domain steps documented; using .dev domain for now.
+
+Commits: da08d28 (S4-2 implementation + deployment)
 
 ## Next
 
-Standby for Cody to complete S3-2, S3-3, S3-7 (one session), then S3-5 assignment.
+Lila picks up S4-1 (runbook) — should write it against the final domain (currently .dev).
