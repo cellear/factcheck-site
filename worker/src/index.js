@@ -65,6 +65,46 @@ function spendCapUsd(env) {
   return Number.isFinite(parsed) ? parsed : 20;
 }
 
+// S4-2: track durations of successful checks to show predicted range. Store as JSON array in
+// durations:<yyyy-mm> alongside spend:<yyyy-mm>.
+function durationKeyForNow() {
+  const now = new Date();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `durations:${now.getUTCFullYear()}-${month}`;
+}
+
+async function addDuration(env, durationMs) {
+  const key = durationKeyForNow();
+  const stored = await env.RESULTS.get(key);
+  const durations = stored ? JSON.parse(stored) : [];
+  durations.push(durationMs);
+  await env.RESULTS.put(key, JSON.stringify(durations));
+}
+
+function calculateStats(durations) {
+  if (durations.length === 0) return null;
+
+  const sorted = [...durations].sort((a, b) => a - b);
+  const mean = durations.reduce((a, b) => a + b, 0) / durations.length;
+  const variance = durations.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / durations.length;
+  const stdDev = Math.sqrt(variance);
+
+  return {
+    mean: Math.round(mean),
+    stdDev: Math.round(stdDev),
+    min: sorted[0],
+    max: sorted[sorted.length - 1],
+    count: durations.length,
+  };
+}
+
+async function getDurationStats(env) {
+  const stored = await env.RESULTS.get(durationKeyForNow());
+  if (!stored) return null;
+  const durations = JSON.parse(stored);
+  return calculateStats(durations);
+}
+
 // The site has no second turn; SKILL.md assumes a chat and would otherwise stop and ask on
 // uncontroversial claims. Confirmed live in S2-1: the same claim wording produced a full report
 // once and a short conversational non-report answer other times, without this frame.
@@ -248,9 +288,38 @@ async function handleCheck(request, env) {
   // S3-2: every completed check meters, including failed outcomes — a refusal or tool_error
   // still spent tokens.
   await addToMonthSpend(env, costUsd);
+  // S4-2: track durations of successful checks for countdown calibration.
+  if (outcome === "ok") {
+    await addDuration(env, durationMs);
+  }
   await env.RESULTS.put(`result:${id}`, JSON.stringify(record));
 
   return jsonResponse({ id });
+}
+
+// S4-2: GET /durations?invite_word=<word> -> { mean, stdDev, min, max, count, lower, upper }.
+// Returns duration stats for successful checks this month. Gated by invite word like /spend.
+// lower/upper are mean ± 1 std dev (the predicted range).
+async function handleGetDurations(url, env) {
+  const inviteWord = url.searchParams.get("invite_word")?.trim() ?? "";
+  if (!inviteWord || inviteWord !== env.INVITE_WORD) {
+    return new Response("Unauthorized", { status: 403, headers: CORS_HEADERS });
+  }
+
+  const stats = await getDurationStats(env);
+  if (!stats) {
+    return jsonResponse({ mean: null, stdDev: null, min: null, max: null, count: 0, lower: null, upper: null });
+  }
+
+  return jsonResponse({
+    mean: stats.mean,
+    stdDev: stats.stdDev,
+    min: stats.min,
+    max: stats.max,
+    count: stats.count,
+    lower: Math.round(Math.max(0, stats.mean - stats.stdDev)),
+    upper: Math.round(stats.mean + stats.stdDev),
+  });
 }
 
 // S3-2: GET /spend?invite_word=<word> -> { month, total_usd }. Read-only, gated the same as a
@@ -285,6 +354,9 @@ export default {
     }
     if (url.pathname === "/check" && request.method === "POST") {
       return handleCheck(request, env);
+    }
+    if (url.pathname === "/durations" && request.method === "GET") {
+      return handleGetDurations(url, env);
     }
     if (url.pathname === "/spend" && request.method === "GET") {
       return handleGetSpend(url, env);
