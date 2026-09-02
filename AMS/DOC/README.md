@@ -8,7 +8,8 @@ One line per file in `DOC/`. Keep this current as `DOC/` grows — that's Lila's
   questions.
 - **`working-agreements.md`** — Standing rules for every persona on this project: agents never
   push, Luke shapes the first commit, a sprint is accepted by demo or it isn't over, DOC/LEARNINGS
-  have one writer.
+  have one writer, mission-summary and same-owner-chaining conventions, sprint acceptance
+  re-walks every checkbox against the demo, echo the mission summary into the handoff too.
 - **`runbook.md`** — Task-by-task guide for Luke: change the spend cap, the invite word, the
   model, or re-vendor the skill; read spend; redeploy; tell a budget-cap refusal apart from an
   empty Console balance; where secrets live; fixture permalinks; `demo.sh` conventions.
@@ -18,4 +19,5 @@ One line per file in `DOC/`. Keep this current as `DOC/` grows — that's Lila's
 
 ---
 
-Last updated: 2026-08-31 by Lila (claude-sonnet-5) — added runbook.md (S4-1)
+Last updated: 2026-09-01 by Lila (claude-sonnet-5) — refreshed the working-agreements.md summary
+after S4-R's new conventions

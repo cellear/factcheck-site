@@ -10,7 +10,10 @@ Preferences, not facts about the current sprint — those belong in a sprint fil
 - When applying a numbered corrections list to a DOC file, read the whole file again afterward
   rather than trusting the list was exhaustive — S1-6 found two stale cross-references
   (a "three-minute ceiling" phrase, a missing outcome in a diagram) that weren't on Archie's
-  13-item list but were now inconsistent with sections the list did touch.
+  13-item list but were now inconsistent with sections the list did touch. Confirmed again at
+  S4-R: Nadia's promotion list named only the "Components" section as having a stale
+  fixed-90s countdown description, but decision 10's table row in the same file said the same
+  stale thing — caught only by re-reading the whole file, not on the list.
 - When a handoff hands me a source citation for a finding, verify the citation before writing —
   S1-R's handed-over list attributed a finding to the wrong handoff filename (right content,
   wrong pointer). Cheap to check, and the finding is only as trustworthy as its source.

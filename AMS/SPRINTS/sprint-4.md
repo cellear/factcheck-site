@@ -75,7 +75,7 @@
 
 ---
 
-### S4-R · Retro and records · [ ]
+### S4-R · Retro and records · [x]
 
 **Owner:** Nadia (runs it) and Lila (writes it) · **Model:** `claude-sonnet-5` · **Size:** s · **Depends on:** sprint accepted
 
@@ -84,8 +84,8 @@
 - Lila writes `LEARNINGS/sprint-4.md` and applies any DOC updates Nadia or Archie handed over
 
 **Acceptance criteria:**
-- [ ] `LEARNINGS/sprint-4.md` exists
-- [ ] No DOC edits were made by anyone but Lila
+- [x] `LEARNINGS/sprint-4.md` exists
+- [x] No DOC edits were made by anyone but Lila
 
 ---
 

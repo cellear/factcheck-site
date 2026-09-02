@@ -39,7 +39,7 @@ audience and the "site runs the check" decision. One serverless function is the 
 | 7 | Results live in a **key-value bucket**, addressed by short unguessable id (`/r/<id>`) | decided | Zero-storage (result-in-URL) design; links were judged too long for email/SMS |
 | 8 | Access: **shared invite word** + hard monthly spend cap | decided | Accounts, personal data, per-user anything |
 | 9 | Spend cap: **$20/month**, hard shutdown when reached | decided | See capacity note below |
-| 10 | Visitors wait on the page; predicted duration shown as a countdown — **90 seconds** (Sonnet 5), then an honest overflow message; up to three minutes was the original acceptance bar, confirmed by the spike as typical rather than a ceiling (see Latency) | decided | Nothing — streaming remains available if waiting feels broken |
+| 10 | Visitors wait on the page; predicted duration shown as a countdown — originally a fixed **90 seconds** (Sonnet 5), then an honest overflow message; up to three minutes was the original acceptance bar, confirmed by the spike as typical rather than a ceiling (see Latency). Since S4-2 the figure is calibrated live from real duration data instead of fixed at 90s (see Components, The bucket) | decided | Nothing — streaming remains available if waiting feels broken |
 | 11 | A wrong result is what the method produced that day; no retraction, editing, or supersession | decided | Moderation tooling; result versioning |
 | 12 | No privacy assumed; the page tells users not to paste anything they want kept quiet | decided | Retention/deletion machinery |
 | 13 | Skill version: record the skill's git commit in every result; do not build version-tracking beyond that | decided | Nothing; preserves the option |
@@ -109,10 +109,14 @@ would need the older `web_search_20250305` variant.
 ## Components
 
 **Static site.** Two pages: the form, and the result view. No framework required; plain HTML
-with enough JS to POST, wait, and render. The predicted-duration countdown lives here. The
-result view renders `report` as markdown starting at the first `# Fact-Check Report` line, plus
-a Sources list built from `citations[]` (deduped by URL); no section parsing (decision 17). A
-non-`ok` outcome renders the failed-check message instead.
+with enough JS to POST, wait, and render. The predicted-duration countdown lives here. Since S4-2
+the countdown is calibrated live from real duration data — mean ± 1σ of the month's completed
+(`outcome: ok`) checks, via `durations:<yyyy-mm>` (see The bucket) — rather than the constant 90s
+the spike originally set; the spike's own numbers (see Latency) remain useful as initial/
+lower-bound context but are no longer the live source once real data accumulates. The result view
+renders `report` as markdown starting at the first `# Fact-Check Report` line, plus a Sources
+list built from `citations[]` (deduped by URL); no section parsing (decision 17). A non-`ok`
+outcome renders the failed-check message instead.
 
 **The function.** One HTTP handler. Holds the API key as a secret. Responsibilities are exactly
 the branches in the diagram above and nothing else. Target: small enough to read in one sitting.
@@ -123,6 +127,12 @@ the branches in the diagram above and nothing else. Target: small enough to read
   it is at or above the cap. Monthly reset is implicit (new key, new month). Read-modify-write,
   no compare-and-swap — a known, accepted race under concurrent traffic at this project's volume
   (a dozen checks/day); not fixed in v1 (S3-2).
+- `durations:<yyyy-mm>` — a JSON array of `duration_ms` for the month's successful (`outcome:
+  ok`) checks (S4-2). `GET /durations?invite_word=<word>` computes `mean`, `stdDev`, `min`,
+  `max`, `count` and returns `lower`/`upper` = mean ± 1 stdDev (floored at 0), which the site uses
+  for the countdown (see Components). Same implicit-monthly-reset shape as `spend:<yyyy-mm>`, and
+  the same kind of accepted tradeoff: the array grows unbounded within a month (no pruning),
+  accepted at this project's volume (a dozen checks/day), reset implicit at the month boundary.
 
 **The skill.** `SKILL.md` from the upstream repo, vendored into this repo with its source
 commit recorded. It is the system prompt. When it changes upstream, someone updates the vendored
@@ -256,6 +266,6 @@ This document was written from the discovery conversation, not from that section
 
 ---
 
-Last updated: 2026-08-31 by Lila (claude-sonnet-5) — added decision 18 (prompt caching enabled
-by default, S3-7), refusal_category, the spend-counter race note, and resolved open question 3,
-via the S3-R retro
+Last updated: 2026-09-01 by Lila (claude-sonnet-5) — added the `durations:<yyyy-mm>` KV key
+(S4-2) and updated the countdown description to say it's now calibrated live from real duration
+data rather than a fixed 90s, via the S4-R retro

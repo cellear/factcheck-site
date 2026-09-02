@@ -1,25 +1,28 @@
 # Lila's Desk
 
-**Last active:** 2026-08-31 (S4-1)
+**Last active:** 2026-09-01 (S4-R, my half)
 
 ## Where things stand
 
-Wrote `DOC/runbook.md` (S4-1) — ten tasks covering every routine thing Luke would need to do:
-change the spend cap/invite word/model, re-vendor the skill, read spend, redeploy, tell a
-budget-cap refusal apart from an empty Console balance, where secrets live, fixture permalinks,
-`demo.sh` conventions. Sourced from real handoffs and the live code, not reconstructed from the
-story text — caught that Sandy's prompt assumed a `vendor.mjs` script that doesn't actually
-exist, and wrote the re-vendor task as the manual process it really is instead.
+Closed out S4-R (Nadia ran the retro and handed me the list; I wrote the record). Wrote
+`LEARNINGS/sprint-4.md` (five bullets: the third checkbox-hygiene recurrence, the
+Quinn→Nadia handoff convention running clean three sprints, the same-owner chaining
+convention's first real exercise, the verify-against-real-code habit, the flag-don't-fix
+discipline). Applied four DOC promotions to `DOC/architecture.md` (new `durations:<yyyy-mm>`
+KV key; the stale fixed-90s countdown description, in both "Components" *and* decision 10 in
+the Decisions table — caught the second stale spot myself on the whole-file re-read) and two
+new `DOC/working-agreements.md` entries (sprint acceptance re-walks every checkbox against the
+demo; echo the mission summary into the handoff, not just chat). Refreshed `DOC/README.md`'s
+one-line summary of `working-agreements.md`, which had gone stale two conventions ago. Ticked
+S4-R's two acceptance criteria and its story box in `AMS/SPRINTS/sprint-4.md` — Sprint 4 is
+now fully closed.
 
-Not yet accepted — that's Luke's live-demo call, next up via Quinn (S4-4 dry-run) then Nadia
-(live run).
-
-Full detail: `AMS/HANDOFF/handoff-2026-08-31-s4-1-runbook-lila.md`.
+Full detail: `AMS/HANDOFF/handoff-2026-09-01-s4-r-lila.md`.
 
 ## Next
 
-Nothing queued for me until Sprint 4 reaches acceptance/S4-R, or something else hands me a DOC
-correction in the meantime.
+Nothing queued for me in Sprint 5 (Cody's lane per Archie's planning handoff). Watch for a
+DOC/LEARNINGS handoff from Cody's S5-1→S5-4 chain, or a fresh retro at S5-R.
 
 ## Standing reminders
 
@@ -28,10 +31,17 @@ correction in the meantime.
   the text to deliver himself. Learned the hard way, 2026-08-29.
 - I follow two conventions I helped write into DOC myself: give a one-line mission summary in
   chat after any "Prompt for Next Assistant" I write, and ask Luke once before chaining through
-  consecutive same-owner stories rather than assuming.
+  consecutive same-owner stories rather than assuming. As of S4-R, also echo that mission
+  summary into the handoff file itself, not just chat — my own S4-1 handoff was the only Sprint
+  4 handoff a retro could verify this from, which is why the convention now says to write it
+  twice.
 - When a handed-over handoff gets amended after I've already applied and committed part of it
   (happened with S2-R), check the file's actual current content before assuming a prior read is
   still complete.
 - Before writing a runbook/how-to procedure from a story's own text, verify every referenced
   script or file actually exists (S4-1: the story assumed `spike/vendor.mjs`; it doesn't exist —
   wrote the real manual process instead of documenting a tool that isn't there).
+- Re-reading a whole DOC file after applying a handed-over corrections list keeps finding real,
+  uncalled-for staleness — S1-6 found two stale cross-references off-list; S4-R found the same
+  "fixed 90s countdown" staleness in a second spot (decision 10's table row) that the handoff's
+  promotion list only named for the Components section. Keep doing this every time.

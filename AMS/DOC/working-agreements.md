@@ -120,7 +120,35 @@ same-owner stories will improvise its own shortcut and can drop a real requireme
 this happened in Sprint 3 before either convention made it into this file (see
 `LEARNINGS/sprint-3.md`).
 
+## Sprint acceptance re-walks every checkbox against the demo
+
+When recording a sprint's acceptance, the session doing so should check each story's box and
+acceptance-criteria boxes against what the live demo just proved, not only against whether the
+box already matches its owning handoff. An acceptance criterion that can only be verified by the
+live demo itself (not by the persona who implemented it) will otherwise sit unticked
+indefinitely, because no single session ever owns "go back and tick it."
+
+**Why:** this is the third occurrence of the same underlying gap across four sprints — S1-1
+(same-session omission), S1-5 (a stale box nobody revisited, caught by Luke's Agent Monitor
+dashboard), S4-1 (the acceptance criterion could only be proven by a later live demo; the
+implementing persona correctly declined to tick it, and nobody ticked it afterward, including
+the session recording overall acceptance) — in three different shapes. Each was caught
+individually, but none of the catches produced a standing rule until now. Source:
+`LEARNINGS/sprint-1.md`, `LEARNINGS/sprint-4.md`.
+
+## Echo the mission summary into the handoff, not just chat
+
+The mission-summary convention above only requires the summary in the final chat message to
+Luke. Also copy the same one-to-two sentence summary into the handoff's "Prompt for Next
+Assistant" section (or immediately after it), so the written handoff record is self-verifying —
+no new obligation, just writing the existing summary down twice.
+
+**Why:** a retro reviewing the written handoff record can't confirm the mission-summary
+convention happened if the summary only ever lived in chat. Lila's S4-1 handoff was the only
+Sprint 4 handoff that also wrote a "Mission summary" line into the file itself, which is why it
+was the only one S4-R's retro could verify directly against the record.
+
 ---
 
-Last updated: 2026-08-31 by Lila (claude-sonnet-5) — added the mission-summary and same-owner
-chaining conventions (overdue from S2-R, applied via S3-R)
+Last updated: 2026-09-01 by Lila (claude-sonnet-5) — added the checkbox-re-walk-at-acceptance and
+echo-mission-summary-into-handoff conventions, via the S4-R retro
