@@ -6,6 +6,10 @@
   "rules": [
     { "type": "Text", "globs": ["**/*.md"], "fallthrough": true }
   ],
+  "vars": {
+    "WEB_SEARCH_MAX_USES": "25",
+    "WEB_FETCH_MAX_USES": "3"
+  },
   "kv_namespaces": [
     {
       "binding": "RESULTS",

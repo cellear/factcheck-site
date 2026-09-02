@@ -28,7 +28,7 @@ character **no name** in copy yet.
 
 ## Stories
 
-### S5-1 · Worker: two-phase session flow · [ ]
+### S5-1 · Worker: two-phase session flow · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** l · **Depends on:** —
 
@@ -56,19 +56,25 @@ character **no name** in copy yet.
 - **Raise the web search cap:** `max_uses` from 5 to an env var (`WEB_SEARCH_MAX_USES`),
   default 25. Luke wants headroom, "possibly MUCH higher" — pick the default from what phase 2
   actually uses in testing.
-- **Raise the spend cap:** `SPEND_CAP_USD` to 100 (Luke's account has no auto-reload; the
-  Console balance is the real backstop now). Meter keeps billing both phases, cache rates
-  included.
+- ~~Raise the spend cap: `SPEND_CAP_USD` to 100~~ — **reversed by Luke, 2026-09-01: staying at
+  $20**, unchanged from S3-2. Meter keeps billing both phases, cache rates included.
 - Keep `/check` answering during the transition or cut over atomically with S5-3/S5-4 — the
   deployed site must never point at a dead endpoint.
 
 **Acceptance criteria:**
-- [ ] An ambiguous multi-claim post comes back from phase 1 as a set of identified issues to
-      choose from, in seconds, with $0 of search spend
-- [ ] An uncontroversial claim gets the fast "settled" answer with deep-check offered
-- [ ] Phase 2 on a chosen issue produces a report and a permanent `/r/{id}` link with the same
-      record shape as today (plus any new fields), and `site/r.html` still renders it
-- [ ] Abandoned sessions expire on their own
+- [x] An ambiguous multi-claim post comes back from phase 1 as a set of identified issues to
+      choose from, in seconds, with $0 of search spend -- verified live twice (moon-landing and
+      coffee/cancer claims), phase 1's tool set has no web_search, searches: 0 both times
+- [x] An uncontroversial claim gets the fast "settled" answer with deep-check offered -- verified
+      live (`triage: "uncontroversial", settled: true`); a disputed claim correctly came back
+      `triage: "contentious_subclaims", settled: false`
+- [x] Phase 2 on a chosen issue produces a report and a permanent `/r/{id}` link with the same
+      record shape as today (plus any new fields), and `site/r.html` still renders it -- verified
+      live for both the default (no issue picked -> primary claim) and explicit-issue-selection
+      paths; `site/r.html` unaffected (record shape only gained an additive `issues_investigated`
+      field)
+- [x] Abandoned sessions expire on their own -- `session:<id>` written with `expirationTtl: 3600`
+      (KV-enforced, not independently re-verified by waiting an hour)
 
 ---
 
@@ -206,7 +212,8 @@ the sprint is not accepted and fix stories are added to this file.
   9. URL input added (web_fetch in phase 1) — Luke's own usage pattern per the reference
      recording; **image input considered and deferred** (frontend + record-shape + permalink
      display questions; revisit after this sprint settles the new record shape).
-  6. Spend cap raised $20 → $100; cost worry formally punted (no auto-reload; Console balance is the backstop).
+  6. ~~Spend cap raised $20 → $100~~ — **reversed by Luke, 2026-09-01 (S5-1 session): staying at
+     $20.** Cost worry not punted after all; the cap is unchanged from S3-2.
   7. Result page stays plain markdown; record stores the final report only.
   8. All coding to Cody in one chained session (S5-1 → S5-2 → S5-3 → S5-4).
 

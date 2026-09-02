@@ -18,6 +18,17 @@ const MODEL = "claude-sonnet-5"; // decision 15
 const REPORT_HEADING_RE = /^# Fact-Check Report.*$/m;
 const SKILL_COMMIT = (SOURCE_MD.match(/Commit hash:\*\*\s*([0-9a-f]{7,40})/i) ?? [])[1] ?? null;
 
+// S5-1: phase 1 (parse/triage) uses web_fetch only, no web_search -- $0 search spend by
+// construction. Confirmed live (spike probe, 2026-09-01): no beta header needed, and web_fetch
+// has no per-use charge (token cost only) -- unlike web_search's $10/1000, so computeCostUsd()
+// needs no fetch line item.
+const WEB_FETCH_TOOL_TYPE = "web_fetch_20260209";
+const PHASE1_MAX_TOKENS = 4096;
+const PHASE2_MAX_TOKENS = 8192;
+const MAX_FETCH_CONTENT_TOKENS = 50000; // defensive cap so one huge page can't blow up cost/context
+const SESSION_TTL_SECONDS = 3600; // "sits, then expires" (Luke) -- no auto-proceed, 1 hour window
+const JSON_TRAILER_RE = /```json\s*([\s\S]*?)```\s*$/;
+
 // $/1M tokens — see DOC/architecture.md decision 15 and spike/check.mjs.
 const PRICES_USD_PER_MTOK = { "claude-sonnet-5": { input: 2.0, output: 10.0 } };
 const WEB_SEARCH_USD_PER_SEARCH = 0.01;
@@ -62,7 +73,21 @@ async function addToMonthSpend(env, amountUsd) {
 
 function spendCapUsd(env) {
   const parsed = Number(env.SPEND_CAP_USD);
-  return Number.isFinite(parsed) ? parsed : 20;
+  return Number.isFinite(parsed) ? parsed : 20; // Sprint 5 planning proposed raising this to 100;
+  // Luke kept it at $20 (2026-09-01) -- unchanged from S3-2.
+}
+
+// S5-1: web search cap raised from a hardcoded 5 to an env var (WEB_SEARCH_MAX_USES), default 25.
+// Only /session/:id/proceed (phase 2) reads this; /check keeps its original max_uses: 5 --
+// frozen, not touched by this sprint, so it can keep answering unchanged during the transition.
+function webSearchMaxUses(env) {
+  const parsed = Number(env.WEB_SEARCH_MAX_USES);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 25;
+}
+
+function webFetchMaxUses(env) {
+  const parsed = Number(env.WEB_FETCH_MAX_USES);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 3;
 }
 
 // S4-2: track durations of successful checks to show predicted range. Store as JSON array in
@@ -117,6 +142,81 @@ function frameClaim(claim) {
     "fact-check report regardless of how settled or uncontroversial the claim seems — note that " +
     "it's uncontroversial in the Triage section rather than skipping the report format."
   );
+}
+
+// S5-1: phase 1 of the two-phase session flow -- parse and triage only, no web_search, and the
+// model must end its reply with a machine-readable fenced ```json block (see splitPhase1Output).
+// Retires frameClaim()'s "never ask, always produce the full report" text for this call: the
+// site now has a second turn, so there is something to ask about again.
+function frameParse(input) {
+  return (
+    `${input}\n\n---\n\n` +
+    "This is phase 1 of a two-step process: parse and triage only. Do not use web_search and do " +
+    "not produce the full fact-check report yet -- that happens in phase 2, after the user " +
+    "chooses what to investigate. If the input looks like a URL, use web_fetch to retrieve the " +
+    "article first, then work from its content.\n\n" +
+    "Do:\n" +
+    "1. Identify the PRIMARY claim and any other independently checkable claims or issues in the " +
+    "text.\n" +
+    "2. Give a quick triage assessment: uncontroversial, disputed, or contains contentious " +
+    "sub-claims, with a one- or two-sentence reason.\n\n" +
+    "Then end your reply with a fenced ```json block (and nothing after it) with exactly this " +
+    "shape:\n" +
+    "{\n" +
+    '  "primary_claim": "...",\n' +
+    '  "issues": ["...", "..."],\n' +
+    '  "triage": "uncontroversial" | "disputed" | "contentious_subclaims",\n' +
+    '  "settled": true | false,\n' +
+    '  "url_fetched": true | false\n' +
+    "}\n" +
+    '"issues" should list every independently choosable thing a user could ask to dig into, ' +
+    'including the primary claim itself as the first entry. "settled" is true only when triage ' +
+    'is "uncontroversial" and the primary claim needs no deep verification.'
+  );
+}
+
+// S5-1: phase 2 -- the final turn, replayed after phase 1's message pair (see
+// handleProceedSession). Same single-turn framing as the old frameClaim(), scoped to whatever
+// the user chose to dig into rather than the whole claim.
+function frameInvestigate(chosenText) {
+  return (
+    `Investigate: ${chosenText}\n\n---\n\n` +
+    "This is phase 2 of a two-step process -- the final turn, with no further follow-up " +
+    "available. Use web_search as needed to fully investigate the issue(s) above, following the " +
+    "skill's process from where phase 1 left off. Produce the full fact-check report now, using " +
+    "the format in SKILL.md, covering the chosen issue(s), regardless of how settled or " +
+    "uncontroversial phase 1's triage found it -- note that in the Triage section rather than " +
+    "skipping the report format or answering conversationally instead. If any part of the " +
+    "request is ambiguous, state your reading and proceed rather than asking."
+  );
+}
+
+// S5-1: splits phase 1's assembled text into the human-readable prose and the trailing
+// machine-readable JSON block frameParse() asked for. Returns parsed: null (not a thrown error)
+// when the model didn't comply or the block doesn't have the required shape -- a known,
+// accepted simplification: any phase-1 non-compliance is treated the same as a parse failure,
+// with no finer-grained classification the way phase 2's outcome field has (DOC promotion
+// candidate for Lila to note as a simplification, same spirit as other accepted tradeoffs).
+function splitPhase1Output(assembled) {
+  const match = assembled.match(JSON_TRAILER_RE);
+  if (!match) return { prose: assembled.trim(), parsed: null };
+
+  const prose = assembled.slice(0, match.index).trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(match[1]);
+  } catch {
+    return { prose, parsed: null };
+  }
+
+  const valid =
+    parsed &&
+    typeof parsed.primary_claim === "string" &&
+    Array.isArray(parsed.issues) &&
+    typeof parsed.triage === "string" &&
+    typeof parsed.settled === "boolean";
+
+  return { prose, parsed: valid ? parsed : null };
 }
 
 function extractTextAndCitations(message) {
@@ -297,6 +397,230 @@ async function handleCheck(request, env) {
   return jsonResponse({ id });
 }
 
+// S5-1: POST /session. Accepts { claim, invite_word } (claim may be a pasted claim or a URL --
+// same field, broader meaning; SKILL.md already tells the model to web_fetch a URL). Runs phase
+// 1 (parse/triage, no web_search) and stores a session record for handleProceedSession to
+// replay. $0 search spend by construction: phase 1's tools array has no web_search.
+async function handleCreateSession(request, env) {
+  let claim, inviteWord;
+  try {
+    const body = await request.json();
+    claim = typeof body?.claim === "string" ? body.claim.trim() : "";
+    inviteWord = typeof body?.invite_word === "string" ? body.invite_word.trim() : "";
+  } catch {
+    return jsonResponse({ error: "invalid JSON body" }, 400);
+  }
+
+  if (!inviteWord || inviteWord !== env.INVITE_WORD) {
+    return new Response("Unauthorized", { status: 403, headers: CORS_HEADERS });
+  }
+  if (!claim) {
+    return jsonResponse({ error: "missing claim" }, 400);
+  }
+  if ((await getMonthSpend(env)) >= spendCapUsd(env)) {
+    return new Response("Monthly budget reached", { status: 402, headers: CORS_HEADERS });
+  }
+
+  const userContent = frameParse(claim);
+
+  const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: PHASE1_MAX_TOKENS,
+      system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
+      tools: [
+        {
+          type: WEB_FETCH_TOOL_TYPE,
+          name: "web_fetch",
+          max_uses: webFetchMaxUses(env),
+          max_content_tokens: MAX_FETCH_CONTENT_TOKENS,
+        },
+      ],
+      messages: [{ role: "user", content: userContent }],
+    }),
+  });
+
+  if (!apiResponse.ok) {
+    const errorBody = await apiResponse.text();
+    return jsonResponse(
+      { error: "upstream API error", status: apiResponse.status, body: errorBody },
+      502,
+    );
+  }
+
+  const message = await apiResponse.json();
+  const { assembled } = extractTextAndCitations(message);
+  const costUsd = computeCostUsd(message.usage, 0); // phase 1 has no web_search tool: 0 searches
+
+  // Every completed phase-1 call meters, same principle as S3-2's "every completed check
+  // meters, including failed outcomes" -- a non-compliant reply still spent tokens.
+  await addToMonthSpend(env, costUsd);
+
+  if (message.stop_reason !== "end_turn") {
+    return jsonResponse(
+      { error: "phase 1 did not complete", stop_reason: message.stop_reason },
+      502,
+    );
+  }
+
+  const { prose, parsed } = splitPhase1Output(assembled);
+  if (!parsed) {
+    return jsonResponse({ error: "phase 1 did not return structured output" }, 502);
+  }
+
+  const sessionId = generateId();
+  const session = {
+    id: sessionId,
+    created_at: new Date().toISOString(),
+    input: claim,
+    phase1: {
+      // Plain-text replay only (no tool_use/tool_result blocks) -- simpler and safer than
+      // preserving the exact block structure, and only the resulting text matters for phase 2's
+      // continuity. See scope: "Phase-1 message history is replayed from the session record."
+      messages: [
+        { role: "user", content: userContent },
+        { role: "assistant", content: assembled },
+      ],
+      parsed,
+    },
+  };
+  await env.RESULTS.put(`session:${sessionId}`, JSON.stringify(session), {
+    expirationTtl: SESSION_TTL_SECONDS,
+  });
+
+  return jsonResponse({
+    session_id: sessionId,
+    parse_text: prose,
+    primary_claim: parsed.primary_claim,
+    issues: parsed.issues,
+    triage: parsed.triage,
+    settled: parsed.settled,
+    url_fetched: parsed.url_fetched ?? false,
+  });
+}
+
+// S5-1: POST /session/:id/proceed. Accepts { invite_word, issues?: string[], custom?: string }.
+// issues/custom choose what to dig into; neither given means "run the deep check on the primary
+// claim anyway" (the settled fast-path's "deep-check offered" button). Runs phase 2 (full
+// investigation, web_search enabled) replaying phase 1's history, then writes the permanent
+// result:<id> record exactly as /check always has -- same classify()/extraction/metering, only
+// reached via a different route in.
+async function handleProceedSession(request, env, sessionId) {
+  let inviteWord, issues, custom;
+  try {
+    const body = await request.json();
+    inviteWord = typeof body?.invite_word === "string" ? body.invite_word.trim() : "";
+    issues = Array.isArray(body?.issues)
+      ? body.issues.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim())
+      : [];
+    custom = typeof body?.custom === "string" ? body.custom.trim() : "";
+  } catch {
+    return jsonResponse({ error: "invalid JSON body" }, 400);
+  }
+
+  if (!inviteWord || inviteWord !== env.INVITE_WORD) {
+    return new Response("Unauthorized", { status: 403, headers: CORS_HEADERS });
+  }
+
+  const sessionKey = `session:${sessionId}`;
+  const stored = await env.RESULTS.get(sessionKey);
+  if (stored === null) {
+    return jsonResponse({ error: "session not found or expired" }, 404);
+  }
+  const session = JSON.parse(stored);
+  // A session is single-use: this call consumes it regardless of outcome, so a retry needs a
+  // fresh POST /session rather than reusing a half-spent one (same no-compare-and-swap spirit
+  // as the spend/duration counters -- simple over exactly-once).
+  await env.RESULTS.delete(sessionKey);
+
+  if ((await getMonthSpend(env)) >= spendCapUsd(env)) {
+    return new Response("Monthly budget reached", { status: 402, headers: CORS_HEADERS });
+  }
+
+  const chosenText =
+    custom ||
+    (issues.length > 0 ? issues.map((i) => `- ${i}`).join("\n") : session.phase1.parsed.primary_claim);
+
+  const startedAt = new Date();
+  const startMs = Date.now();
+
+  const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: PHASE2_MAX_TOKENS,
+      system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: webSearchMaxUses(env) }],
+      messages: [...session.phase1.messages, { role: "user", content: frameInvestigate(chosenText) }],
+    }),
+  });
+
+  if (!apiResponse.ok) {
+    const errorBody = await apiResponse.text();
+    return jsonResponse(
+      { error: "upstream API error", status: apiResponse.status, body: errorBody },
+      502,
+    );
+  }
+
+  const message = await apiResponse.json();
+  const durationMs = Date.now() - startMs;
+
+  const { assembled, citations } = extractTextAndCitations(message);
+  const report = extractReport(assembled);
+  const { outcome, searchCapHit, toolErrors, refusalCategory } = classify(message, report);
+  const searches = message.content.filter((b) => b.type === "web_search_tool_result").length;
+  const usage = message.usage;
+  const costUsd = computeCostUsd(usage, searches);
+
+  const id = generateId();
+  const record = {
+    id,
+    created_at: startedAt.toISOString(),
+    claim_text: session.input,
+    report,
+    citations,
+    model: MODEL,
+    served_by_model: message.model,
+    skill_commit: SKILL_COMMIT,
+    usage: {
+      input_tokens: usage.input_tokens,
+      output_tokens: usage.output_tokens,
+      cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
+      cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
+      searches,
+    },
+    cost_usd: costUsd,
+    outcome,
+    refusal_category: refusalCategory ?? null,
+    search_cap_hit: searchCapHit,
+    tool_errors: toolErrors,
+    duration_ms: durationMs,
+    // S5-1: new field, additive -- what the user actually chose to investigate. site/r.html
+    // doesn't read it; it's here for anyone auditing a result later.
+    issues_investigated: issues.length > 0 ? issues : custom ? [custom] : [session.phase1.parsed.primary_claim],
+  };
+
+  await addToMonthSpend(env, costUsd);
+  if (outcome === "ok") {
+    await addDuration(env, durationMs);
+  }
+  await env.RESULTS.put(`result:${id}`, JSON.stringify(record));
+
+  return jsonResponse({ id });
+}
+
 // S4-2: GET /durations?invite_word=<word> -> { mean, stdDev, min, max, count, lower, upper }.
 // Returns duration stats for successful checks this month. Gated by invite word like /spend.
 // lower/upper are mean ± 1 std dev (the predicted range).
@@ -354,6 +678,13 @@ export default {
     }
     if (url.pathname === "/check" && request.method === "POST") {
       return handleCheck(request, env);
+    }
+    if (url.pathname === "/session" && request.method === "POST") {
+      return handleCreateSession(request, env);
+    }
+    const sessionProceedMatch = url.pathname.match(/^\/session\/([^/]+)\/proceed$/);
+    if (sessionProceedMatch && request.method === "POST") {
+      return handleProceedSession(request, env, sessionProceedMatch[1]);
     }
     if (url.pathname === "/durations" && request.method === "GET") {
       return handleGetDurations(url, env);
