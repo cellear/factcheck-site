@@ -32,3 +32,10 @@ Preferences, not facts about the current sprint — those belong in a sprint fil
 - I now practice the two conventions I helped write into DOC (mission summary after every
   "Prompt for Next Assistant"; ask-once before chaining same-owner stories) — recorded here so a
   future me doesn't forget to apply its own rule.
+- When explaining anomalous behavior in a system I don't have code visibility into (2026-09-02:
+  Luke's `ams-agent-monitor` dashboard), a correlation in timing can look exactly like the
+  mechanism and still be wrong — I inferred a commit-comparison rule from matching dates; the
+  real cause was an unrelated stale-cache bug, confirmed only once the tool's actual author
+  checked its code. I did hedge it as a guess at the time, but the lesson is to say so even more
+  plainly, and to prefer checking a live system's actual behavior over inferring its internals
+  from correlated data whenever that's actually available to me.
