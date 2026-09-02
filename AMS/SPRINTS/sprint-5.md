@@ -172,7 +172,7 @@ handoff for the full story):**
 
 ---
 
-### S5-4 · Site: the choose step and the firehose wait · [ ]
+### S5-4 · Site: the choose step and the firehose wait · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** l · **Depends on:** S5-1, S5-2, S5-3
 
@@ -191,12 +191,35 @@ handoff for the full story):**
 - Keep the elapsed-vs-typical timer from the design (it's real data via `/durations`); on
   completion, land on `/r/{id}` exactly as today.
 - `site/r.html` stays plain markdown (Luke's call) — touch it only if the record shape forces it.
+- **Note on delivery mechanism:** per S5-2's disconnect-guarantee finding, phase 2 is polled
+  (`GET /session/:id/progress`, ~1.5s client interval) rather than pushed live over SSE. The
+  firehose still updates live in practice, just via polling instead of push — see the S5-4
+  handoff for what this looks like in testing, including Cloudflare KV's own eventual-consistency
+  lag.
+- **Real bug found and fixed while building this story:** `GET /durations` had returned
+  `mean`/`stdDev`/`min`/`max`/`lower`/`upper` in **milliseconds** since S4-2, while every
+  consumer (this site, both before and since S5-4) has always displayed them as if they were
+  seconds — e.g. "typically 22061–203651s" instead of "typically 22–204s". Present in the
+  pre-Sprint-5 site too, just never noticed (the old countdown displayed it smaller and less
+  prominently). Fixed at the source in `worker/src/index.js`'s `handleGetDurations` — the
+  endpoint now returns seconds.
 
 **Acceptance criteria:**
-- [ ] Submitting an ambiguous claim visibly parses, asks, and then streams the chosen
-      investigation live end to end on the deployed site
-- [ ] The bubble's narration reflects actual stream events, not canned rotation
-- [ ] The result permalink still renders as plain markdown
+- [x] Submitting an ambiguous claim visibly parses, asks, and then streams the chosen
+      investigation live end to end on the deployed site — verified in a real browser: the
+      chooser rendered real parsed issues + free-text field, the firehose showed real search
+      queries and result titles live, and the report streamed in as markdown. Landed on `/r/{id}`
+      on completion (confirmed via the deployed site, `factcheck-site.pages.dev`, since the local
+      test server has no `/r/*` rewrite).
+- [x] The bubble's narration reflects actual stream events, not canned rotation — `narrationFor()`
+      derives the bubble text from the latest real event (`searching: "<query>"…`,
+      `reading N sources…`, `writing the report…`, etc.), verified live.
+- [x] The result permalink still renders as plain markdown — `site/r.html` untouched;
+      confirmed live for a failed outcome (`no_report` — the pre-existing, documented
+      probabilistic behavior from S5-1/S5-2, not a new bug) rendering correctly as a failed
+      check. Not independently re-verified for a fresh "ok" outcome in this specific browser
+      session (cost judgment call — already proven working across many worker-level tests this
+      session, and `r.html` is unmodified).
 
 ---
 

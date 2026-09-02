@@ -6,6 +6,7 @@
 <title>Fact-check</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -179,8 +180,7 @@
     text-underline-offset: 3px;
     font-family: inherit;
   }
-  input[type="password"] {
-    width: 180px;
+  input[type="password"], input[type="text"] {
     box-sizing: border-box;
     border: 1px solid rgba(26,26,26,0.16);
     background: #FFFCF6;
@@ -191,6 +191,8 @@
     outline: none;
     font-family: inherit;
   }
+  input[type="password"] { width: 180px; }
+  input[type="text"] { width: 100%; }
   .error-msg {
     margin: 0;
     font-size: 15px;
@@ -202,7 +204,93 @@
     font-size: 13px;
     color: #6B655F;
   }
+  [hidden] { display: none !important; }
+
+  /* Phase 1: live parse text while the model is reading */
+  #parsing-live {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #6B655F;
+  }
+  #parsing-live :first-child { margin-top: 0; }
+
+  /* Choose step */
   #choose-area {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  #parse-result {
+    background: #FFFCF6;
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18);
+    font-size: 15px;
+    line-height: 1.6;
+    color: #3F3A36;
+  }
+  #parse-result :first-child { margin-top: 0; }
+  #chooser-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chooser-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #A09A92;
+  }
+  .issue-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(26,26,26,0.1);
+    background: #FFFCF6;
+    font-size: 14px;
+    color: #3F3A36;
+    cursor: pointer;
+  }
+  .issue-check input { margin-top: 3px; flex: none; }
+  .status-line {
+    margin: 0;
+    font-style: italic;
+    color: #6B655F;
+    font-size: 14px;
+  }
+
+  /* Firehose (phase 2) */
+  #firehose-area {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .stat-card {
+    background: #FFFCF6;
+    border-radius: 22px;
+    padding: 26px;
+    box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .stat-elapsed-row { display: flex; align-items: flex-end; gap: 12px; }
+  .stat-elapsed { font-size: 56px; line-height: 0.9; font-weight: 800; letter-spacing: -0.03em; }
+  .stat-typical { font-size: 15px; color: #6B655F; padding-bottom: 6px; }
+  .progress-track { height: 8px; border-radius: 999px; background: #EFD9BC; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; background: #1F4D2E; transition: width 900ms linear; width: 0%; }
+  .stat-claim-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #A09A92;
+  }
+  .stat-claim-text { font-size: 15px; font-style: italic; color: #1A1A1A; }
+  .watching {
     background: #FFFCF6;
     border-radius: 22px;
     padding: 22px;
@@ -210,14 +298,27 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    font-size: 15px;
-    line-height: 1.5;
-    color: #3F3A36;
   }
-  #choose-area h2 { margin: 0; font-size: 18px; color: #1A1A1A; }
-  #choose-area ul { margin: 0; padding-left: 20px; }
-  #choose-area .status-line { font-style: italic; color: #6B655F; }
-  [hidden] { display: none !important; }
+  .watching h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #A09A92;
+  }
+  .search-entry { font-size: 14px; color: #3F3A36; }
+  .search-entry .q { font-weight: 600; color: #1A1A1A; }
+  .search-entry ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: #6B655F; }
+  .search-entry .waiting { font-size: 13px; color: #A09A92; margin-top: 4px; }
+  .report-card {
+    background: #FFFCF6;
+    border-radius: 22px;
+    padding: 26px;
+    box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18);
+  }
+  #report-stream { font-size: 15px; line-height: 1.6; color: #1A1A1A; }
+  #report-stream :first-child { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -255,10 +356,42 @@
 
           <p class="error-msg" id="error-msg" hidden></p>
 
+          <div id="parsing-live" hidden></div>
+
           <p class="footnote">Results get a permanent, shareable link once the check completes.</p>
         </form>
 
-        <div id="choose-area" hidden></div>
+        <div id="choose-area" hidden>
+          <div id="parse-result"></div>
+          <div id="chooser-controls">
+            <span class="chooser-label">Pick what to dig into</span>
+            <div id="issue-checks"></div>
+            <input type="text" id="custom-issue" placeholder="or check something else about it…">
+            <button type="button" class="submit" id="investigate-btn">Investigate</button>
+            <p class="status-line" id="chooser-status"></p>
+          </div>
+        </div>
+
+        <div id="firehose-area" hidden>
+          <div class="stat-card">
+            <div class="stat-elapsed-row">
+              <div class="stat-elapsed" id="stat-elapsed">0s</div>
+              <div class="stat-typical" id="stat-typical">typically around 90s</div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+            <div>
+              <div class="stat-claim-label">Investigating</div>
+              <div class="stat-claim-text" id="stat-claim-text"></div>
+            </div>
+          </div>
+          <div class="watching">
+            <h3>Watching</h3>
+            <div id="watch-list"></div>
+          </div>
+          <div class="report-card">
+            <div id="report-stream"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -266,6 +399,8 @@
   <script>
     const API_BASE = "https://factcheck-worker.lm2000.workers.dev";
     const EXAMPLE_CLAIM = "The moon landing is fake because you can’t see the stars.";
+    const DEFAULT_TYPICAL_SECONDS = 90;
+    const PROGRESS_POLL_MS = 1500;
 
     const form = document.getElementById("check-form");
     const textarea = document.getElementById("claim");
@@ -276,8 +411,27 @@
     const useExampleBtn = document.getElementById("use-example");
     const submitBtn = document.getElementById("submit-btn");
     const errorMsg = document.getElementById("error-msg");
+    const parsingLive = document.getElementById("parsing-live");
     const chooseArea = document.getElementById("choose-area");
+    const parseResult = document.getElementById("parse-result");
+    const issueChecks = document.getElementById("issue-checks");
+    const customIssueInput = document.getElementById("custom-issue");
+    const investigateBtn = document.getElementById("investigate-btn");
+    const chooserStatus = document.getElementById("chooser-status");
+    const firehoseArea = document.getElementById("firehose-area");
+    const statElapsed = document.getElementById("stat-elapsed");
+    const statTypical = document.getElementById("stat-typical");
+    const progressFill = document.getElementById("progress-fill");
+    const statClaimText = document.getElementById("stat-claim-text");
+    const watchList = document.getElementById("watch-list");
+    const reportStream = document.getElementById("report-stream");
     const bubble = document.getElementById("bubble");
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
 
     function showError(text) {
       errorMsg.textContent = text;
@@ -354,63 +508,228 @@
       }
     }
 
-    // S5-3: minimal, unstyled placeholder for what happens after phase 1 completes -- S5-4 owns
-    // the real chooser + firehose UI. This exists only so the form is fully functional end to
-    // end (the story's AC: "submits to the session flow") ahead of S5-4 landing.
-    function renderChoices(sessionId, inviteWord, data) {
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    // S5-4: the real choose step. Renders phase 1's parse (as markdown -- it's the same prose
+    // the model wrote, complete with its own triage reasoning) plus an interactive chooser:
+    // every parsed issue as a checkbox, and a free-text field for "or check something else about
+    // it…" (matching the skill's own open-ended follow-up, see design/skill-reference/README.md
+    // quality #4). Neither picked defaults to investigating the primary claim -- the settled
+    // fast path's "deep-check offered" button, per the worker's own default (handleProceedSession).
+    function renderChooser(sessionId, inviteWord, data) {
       form.hidden = true;
+      parsingLive.hidden = true;
       chooseArea.hidden = false;
-      chooseArea.innerHTML = "";
       bubble.textContent = data.settled ? "settled — dig deeper?" : "which one first?";
 
-      const triageLine = document.createElement("p");
-      triageLine.className = "status-line";
-      triageLine.textContent = `Triage: ${data.triage}${data.settled ? " (settled)" : ""}`;
-      chooseArea.appendChild(triageLine);
+      parseResult.innerHTML = marked.parse(data.parse_text || "");
 
-      const heading = document.createElement("h2");
-      heading.textContent = data.primary_claim;
-      chooseArea.appendChild(heading);
-
-      const list = document.createElement("ul");
-      for (const issue of data.issues) {
-        const li = document.createElement("li");
-        li.textContent = issue;
-        list.appendChild(li);
-      }
-      chooseArea.appendChild(list);
-
-      const proceedBtn = document.createElement("button");
-      proceedBtn.type = "button";
-      proceedBtn.className = "submit";
-      proceedBtn.textContent = data.settled ? "Run the deep check anyway" : "Check the primary claim";
-      chooseArea.appendChild(proceedBtn);
-
-      const status = document.createElement("p");
-      status.className = "status-line";
-      chooseArea.appendChild(status);
-
-      proceedBtn.addEventListener("click", async () => {
-        proceedBtn.disabled = true;
-        status.textContent = "Investigating… this can take a minute or more.";
-        bubble.textContent = "on it — give me a minute";
-        try {
-          const response = await fetch(`${API_BASE}/session/${sessionId}/proceed`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ invite_word: inviteWord }),
-          });
-          if (!response.ok) {
-            throw new Error(`proceed failed with status ${response.status}`);
-          }
-          const result = await response.json();
-          if (!result.id) throw new Error("no id returned");
-          window.location.href = `/r/${result.id}`;
-        } catch (err) {
-          status.textContent = "Something went wrong finishing the check — please try again.";
-          proceedBtn.disabled = false;
-        }
+      issueChecks.innerHTML = "";
+      data.issues.forEach((issue, i) => {
+        const label = document.createElement("label");
+        label.className = "issue-check";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = issue;
+        input.id = `issue-${i}`;
+        label.appendChild(input);
+        const span = document.createElement("span");
+        span.textContent = issue;
+        label.appendChild(span);
+        issueChecks.appendChild(label);
       });
+
+      investigateBtn.textContent = data.settled ? "Run the deep check anyway" : "Investigate";
+      investigateBtn.disabled = false;
+      chooserStatus.textContent = "";
+      customIssueInput.value = "";
+
+      investigateBtn.onclick = () => {
+        const checked = Array.from(issueChecks.querySelectorAll("input:checked")).map((el) => el.value);
+        const custom = customIssueInput.value.trim();
+        investigateBtn.disabled = true;
+        chooseArea.hidden = true;
+        startInvestigation(sessionId, inviteWord, checked, custom, data.primary_claim);
+      };
+    }
+
+    let elapsedTimerId = null;
+    let investigationStartMs = null;
+    let durationStats = null;
+
+    function formatElapsed(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return m > 0 ? `${m}m ${String(s).padStart(2, "0")}s` : `${s}s`;
+    }
+
+    // Ticks every second independent of the ~1.5s progress polling, so the timer never looks
+    // frozen between polls -- "something is always moving" (skill quality #2).
+    function updateElapsedDisplay() {
+      const elapsedMs = Date.now() - investigationStartMs;
+      const upper = durationStats?.upper ?? DEFAULT_TYPICAL_SECONDS;
+      const lower = durationStats?.lower ?? null;
+      statElapsed.textContent = formatElapsed(elapsedMs);
+      statTypical.textContent = lower !== null ? `typically ${lower}–${upper}s` : `typically around ${upper}s`;
+      const pct = Math.min(97, Math.round((elapsedMs / 1000 / (upper + 30)) * 100));
+      progressFill.style.width = `${pct}%`;
+    }
+
+    async function fetchDurationStats(inviteWord) {
+      try {
+        const response = await fetch(`${API_BASE}/durations?invite_word=${encodeURIComponent(inviteWord)}`);
+        if (response.ok) durationStats = await response.json();
+      } catch {
+        // fall back to the default typical-range display
+      }
+    }
+
+    // Turns the raw event log into: paired search->results entries (skill quality #3, "shown
+    // bigger" here as its own "Watching" card) and the concatenated report text so far.
+    function buildSearchList(events) {
+      const list = [];
+      let current = null;
+      for (const e of events) {
+        if (e.type === "search") {
+          current = { query: e.query, results: null, error: false };
+          list.push(current);
+        } else if (e.type === "search_results" && current) {
+          current.results = e.results;
+        } else if (e.type === "search_error" && current) {
+          current.results = [];
+          current.error = true;
+        }
+      }
+      return list;
+    }
+    function buildReportText(events) {
+      return events.filter((e) => e.type === "text").map((e) => e.text).join("");
+    }
+    function narrationFor(events) {
+      if (!events || events.length === 0) return "on it — give me a minute";
+      const last = events[events.length - 1];
+      if (last.type === "search") return `searching: "${last.query.slice(0, 44)}"…`;
+      if (last.type === "search_results") return `reading ${last.results.length} source${last.results.length === 1 ? "" : "s"}…`;
+      if (last.type === "search_error") return "that search hit a snag — trying another angle…";
+      if (last.type === "fetch") return "reading the article…";
+      if (last.type === "fetch_result") return "got the article — digging in…";
+      if (last.type === "fetch_error") return "couldn't reach that page — working with what I've got…";
+      if (last.type === "text") return "writing the report…";
+      return "on it…";
+    }
+
+    function renderFirehose(progressData) {
+      const events = progressData.events || [];
+      const searchList = buildSearchList(events);
+      const reportText = buildReportText(events);
+
+      bubble.textContent = narrationFor(events);
+
+      watchList.innerHTML = "";
+      if (searchList.length === 0) {
+        const p = document.createElement("p");
+        p.className = "search-entry";
+        p.textContent = "Getting the search underway…";
+        watchList.appendChild(p);
+      } else {
+        for (const s of searchList) {
+          const div = document.createElement("div");
+          div.className = "search-entry";
+          const q = document.createElement("div");
+          q.innerHTML = `searching: <span class="q">"${escapeHtml(s.query)}"</span>`;
+          div.appendChild(q);
+          if (s.results && s.results.length > 0) {
+            const ul = document.createElement("ul");
+            for (const r of s.results.slice(0, 6)) {
+              const li = document.createElement("li");
+              li.textContent = r.title || r.url;
+              ul.appendChild(li);
+            }
+            div.appendChild(ul);
+          } else if (!s.results && !s.error) {
+            const waiting = document.createElement("div");
+            waiting.className = "waiting";
+            waiting.textContent = "waiting on results…";
+            div.appendChild(waiting);
+          }
+          watchList.appendChild(div);
+        }
+      }
+
+      reportStream.innerHTML = reportText ? marked.parse(reportText) : "";
+    }
+
+    // S5-4: kicks off phase 2. POST /session/:id/proceed is a blocking call (see the S5-2
+    // handoff for why -- it's the disconnect-guarantee investigation's outcome), so it's raced
+    // against the GET /session/:id/progress polling loop purely for the live display; whichever
+    // resolves first (the POST's own response, or a poll reporting done:true) supplies the
+    // result id. A poll failure is transient and retried; a POST failure ends the race with an
+    // error.
+    async function startInvestigation(sessionId, inviteWord, issues, custom, claimText) {
+      firehoseArea.hidden = false;
+      statClaimText.textContent = claimText;
+      watchList.innerHTML = "";
+      reportStream.innerHTML = "";
+      investigationStartMs = Date.now();
+      updateElapsedDisplay();
+      elapsedTimerId = setInterval(updateElapsedDisplay, 1000);
+      fetchDurationStats(inviteWord); // best-effort; updateElapsedDisplay() falls back if it's slow/fails
+
+      let stopped = false;
+
+      const proceedPromise = fetch(`${API_BASE}/session/${sessionId}/proceed`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ invite_word: inviteWord, issues, custom }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || `proceed failed with status ${response.status}`);
+        }
+        return response.json();
+      });
+
+      const pollLoop = (async () => {
+        while (!stopped) {
+          await sleep(PROGRESS_POLL_MS);
+          if (stopped) return null;
+          try {
+            const response = await fetch(
+              `${API_BASE}/session/${sessionId}/progress?invite_word=${encodeURIComponent(inviteWord)}`,
+            );
+            if (response.ok) {
+              const data = await response.json();
+              renderFirehose(data);
+              if (data.done) return data;
+            }
+          } catch {
+            // transient poll failure; keep trying -- the proceed POST is authoritative anyway
+          }
+        }
+        return null;
+      })();
+
+      try {
+        const winner = await Promise.race([
+          proceedPromise.then((r) => ({ id: r.id })),
+          pollLoop.then((d) => (d ? { id: d.result_id } : null)),
+        ]);
+        stopped = true;
+        clearInterval(elapsedTimerId);
+        if (!winner || !winner.id) throw new Error("investigation ended with no result");
+        window.location.href = `/r/${winner.id}`;
+      } catch (err) {
+        stopped = true;
+        clearInterval(elapsedTimerId);
+        bubble.textContent = "that didn't work — try again?";
+        const p = document.createElement("p");
+        p.className = "status-line";
+        p.textContent = "Something went wrong finishing the check — please try again.";
+        firehoseArea.appendChild(p);
+      }
     }
 
     form.addEventListener("submit", async (event) => {
@@ -436,6 +755,8 @@
       submitBtn.disabled = true;
       textarea.disabled = true;
       bubble.textContent = "reading…";
+      parsingLive.hidden = false;
+      parsingLive.innerHTML = "";
 
       try {
         const response = await fetch(`${API_BASE}/session`, {
@@ -449,6 +770,7 @@
           submitBtn.disabled = false;
           textarea.disabled = false;
           bubble.textContent = "one claim at a time";
+          parsingLive.hidden = true;
           return;
         }
         if (response.status === 402) {
@@ -456,6 +778,7 @@
           submitBtn.disabled = false;
           textarea.disabled = false;
           bubble.textContent = "one claim at a time";
+          parsingLive.hidden = true;
           return;
         }
         if (!response.ok) {
@@ -463,22 +786,28 @@
         }
 
         let finalData = null;
+        let liveText = "";
         for await (const evt of readEvents(response)) {
           if (evt.type === "done") {
             finalData = evt;
           } else if (evt.type === "error") {
             throw new Error(evt.message || "phase 1 failed");
+          } else if (evt.type === "text") {
+            liveText += evt.text;
+            parsingLive.innerHTML = marked.parse(liveText);
+          } else if (evt.type === "fetch") {
+            bubble.textContent = "reading the link…";
           }
-          // S5-4 will render evt.type === "text" live here as the parse streams in.
         }
 
         if (!finalData) throw new Error("stream ended with no result");
-        renderChoices(finalData.session_id, inviteWord, finalData);
+        renderChooser(finalData.session_id, inviteWord, finalData);
       } catch (err) {
         showError("Something went wrong reaching the checker — please try again.");
         submitBtn.disabled = false;
         textarea.disabled = false;
         bubble.textContent = "one claim at a time";
+        parsingLive.hidden = true;
       }
     });
   </script>

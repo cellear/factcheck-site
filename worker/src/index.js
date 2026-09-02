@@ -898,9 +898,16 @@ async function handleGetProgress(url, env, sessionId) {
   return new Response(stored, { headers: { "content-type": "application/json", ...CORS_HEADERS } });
 }
 
-// S4-2: GET /durations?invite_word=<word> -> { mean, stdDev, min, max, count, lower, upper }.
-// Returns duration stats for successful checks this month. Gated by invite word like /spend.
-// lower/upper are mean ± 1 std dev (the predicted range).
+// S4-2: GET /durations?invite_word=<word> -> { mean, stdDev, min, max, count, lower, upper },
+// all in SECONDS. Returns duration stats for successful checks this month. Gated by invite word
+// like /spend. lower/upper are mean ± 1 std dev (the predicted range).
+//
+// Bug fixed 2026-09-02 (found live building S5-4's firehose display -- a more prominent "typically
+// Xs" readout than the old countdown surfaced it): getDurationStats()/calculateStats() operate on
+// raw duration_ms values (see addDuration()), so every field here was silently returned in
+// milliseconds while every consumer (this site, both before and since S5-4) has always displayed
+// it as if it were seconds -- e.g. "typically 22061-203651s" instead of "typically 22-204s". This
+// endpoint now converts to seconds at the source so no future consumer can inherit the same bug.
 async function handleGetDurations(url, env) {
   const inviteWord = url.searchParams.get("invite_word")?.trim() ?? "";
   if (!inviteWord || inviteWord !== env.INVITE_WORD) {
@@ -912,14 +919,16 @@ async function handleGetDurations(url, env) {
     return jsonResponse({ mean: null, stdDev: null, min: null, max: null, count: 0, lower: null, upper: null });
   }
 
+  const toSeconds = (ms) => Math.round(ms / 1000);
+
   return jsonResponse({
-    mean: stats.mean,
-    stdDev: stats.stdDev,
-    min: stats.min,
-    max: stats.max,
+    mean: toSeconds(stats.mean),
+    stdDev: toSeconds(stats.stdDev),
+    min: toSeconds(stats.min),
+    max: toSeconds(stats.max),
     count: stats.count,
-    lower: Math.round(Math.max(0, stats.mean - stats.stdDev)),
-    upper: Math.round(stats.mean + stats.stdDev),
+    lower: Math.max(0, toSeconds(stats.mean - stats.stdDev)),
+    upper: toSeconds(stats.mean + stats.stdDev),
   });
 }
 
