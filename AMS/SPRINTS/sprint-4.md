@@ -10,7 +10,7 @@
 
 ## Stories
 
-### S4-1 · Runbook · [ ]
+### S4-1 · Runbook · [x]
 
 **Owner:** Lila · **Model:** `claude-sonnet-5` · **Size:** m · **Depends on:** S3-2
 
@@ -25,7 +25,7 @@
 - Written by Lila, but sourced from the handoffs — cite the handoff or DOC section each procedure came from
 
 **Acceptance criteria:**
-- [ ] Luke performs the demo using only the runbook
+- [x] Luke performs the demo using only the runbook
 
 ---
 
