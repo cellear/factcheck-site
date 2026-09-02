@@ -1,41 +1,42 @@
 # Cody's Desk
 
-**Last active:** 2026-08-31
+**Last active:** 2026-09-02
 
 ## Where things stand
 
-**Sprint 2: fully closed and accepted.** **Sprint 3 ("It's safe to send to people") in
-progress:** S3-1 (Sandy, invite word) done; **S3-2, S3-3, S3-7 (mine) all done** — spend meter
-+ hard cap + `GET /spend`, refusal category stored and rendered, prompt caching live in the
-real handler. All verified live against the deployed Worker.
+**Sprint 5 ("the site catches up to the skill") — all four coding stories done in one chained
+session:** S5-1 (two-phase session flow: `POST /session` for parse/triage, `POST /session/:id/
+proceed` for the investigation), S5-2 (streaming — phase 1 real SSE push, phase 2 poll-based
+after a disconnect-guarantee investigation), S5-3 (site rebuilt as Claude Design direction 1b),
+S5-4 (real chooser + firehose wait screen). Each has its own handoff and commit; the last (S5-4)
+is addressed to Quinn for the demo runner, closing the coding chain.
 
-`worker/src/index.js` now has, in one deployed version: invite word (S3-1), spend meter/cap/
-`/spend` (S3-2), refusal category (S3-3), prompt caching (S3-7). `SPEND_CAP_USD` secret is set
-to `20` (normal state) after testing the 0.01→refuse→20→restore cycle live.
+**The big finding this sprint: Cloudflare Workers cancels outstanding work (including subrequests)
+on client disconnect, capped at `ctx.waitUntil`'s 30 seconds.** Found live during S5-2, confirmed
+against Cloudflare's own docs, escalated to Luke twice (once for the streaming-vs-polling design
+choice, once for the deeper "this probably affects `/check` too, and was never actually true"
+finding). Luke's call: accept and document the gap rather than add Cloudflare Queues this sprint.
+Full story in the S5-2 handoff; DOC promotion handed to Lila.
 
-**S3-5 (page copy) done too** — taking it over from Sandy per Luke's direction. Privacy line on
-the form now states results are public to anyone with the link; result page gets a static
-method caveat (not left to the model to remember). Implementation is complete and deployed; the
-AC itself ("Luke reads both pages and accepts the wording") is his to tick, not mine — left
-unchecked in `sprint-3.md` pending that.
+**Also found and fixed:** `GET /durations` had returned duration stats in milliseconds since S4-2
+while every consumer displayed them as seconds — invisible in the old, small countdown label,
+impossible to miss once S5-4 built a 56px "typically Xs" readout. Fixed at the source.
 
-**All four stories Luke asked for (S3-2, S3-3, S3-5, S3-7) are done.** Only S3-8 (Quinn) and
-S3-R (Nadia/Lila) remain in Sprint 3.
+**Deploys:** as of this write-up, asked Luke to run both `npx wrangler deploy` (worker) and
+`npx wrangler pages deploy site` (site) to ship S5-1 through S5-4's combined changes — not yet
+confirmed landed. Everything up through S5-3's own worker deploys did land and were verified
+live; this final pair (the S5-4 durations fix + the S5-3/S5-4 site rebuild, which was never
+separately deployed) is the one still pending as this session closes.
 
-**For Lila**, carried in the S3-2/S3-3/S3-7 handoff: S3-7's post-deploy confirmation numbers
-(cache fields nonzero, cost billed correctly in production); a new `refusal_category` field on
-the Result record sketch; the `spend:<yyyy-mm>` read-modify-write race is a known, accepted
-simplification at this project's traffic.
-
-**Spend this session (2026-08-31, S3-2/S3-3/S3-7 verification): ~$0.18** (two real checks).
-Anthropic Console balance was ~$11.01 after Luke's earlier top-up — plenty of room left.
+**Spend this session (2026-09-02, Sprint 5 S5-1 through S5-4 testing):** roughly $0.9 across many
+real phase-1 and phase-2 calls, local `wrangler dev` iteration (against local KV, no cost), and
+one long-running (~244s) live investigation used for S5-4's firehose verification.
 
 ## Next
 
-**S3-5** (page copy) — form page privacy wording, result page method caveat + failed-check
-wording per outcome. Then Sprint 3's remaining stories (S3-8 Quinn, S3-R Nadia/Lila) aren't
-mine.
+Sprint 5's coding is done. Quinn's S5-5 (demo runner) is next, per my own S5-4 handoff's prompt —
+not mine to do. If a future session picks this project back up as Cody: check whether the two
+pending deploys from S5-4's close landed; if not, that's the very first thing to resolve.
 
-Carrying: the S1-2/S1-3 items are long resolved; the citations and caching DOC corrections from
-Sprint 2 are still pending Lila's pass (now joined by S3-3's `refusal_category` field and
-S3-7's confirmation numbers, all in one place in today's handoff).
+Carrying forward from earlier sprints: nothing new — the S1/S2/S3 items noted in past desk.md
+snapshots were long resolved before this sprint started.

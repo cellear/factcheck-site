@@ -2,26 +2,19 @@
 
 Carry-forward items in this persona's lane that have not resolved yet.
 
-- ~~Doc corrections owed to Archie/Lila~~ — **applied**, verified 2026-08-30 in
-  `DOC/architecture.md` lines 84-85 (max_uses 0 → 400, not a per-search error) and 136-139
-  (`fallbacks: "default"` rejected on Sonnet 5 / Haiku 4.5, Opus-tier/Fable only).
-- New from S1-3, for Archie's S1-4 read-out: whether `max_uses: 5` is too low for claims needing
-  broad sourcing (Sonnet 5 hit it naturally on one of four claims), and whether the classifier
-  should ever distinguish "search failed after N successes with a complete report anyway" from
-  "search failed before any real grounding" (S1-2's forced-error case). Not Cody's call — see
-  `spike/RESULTS.md`.
-- S1-3, S2-1, S2-2 all done. Next up for Cody: S2-4 (form page with countdown).
-- Resolved by S2-2: the single-turn frame implemented there worked on both real verification
-  calls (2 for 2 with a frame, vs. 0 for 2 without one in S2-1). Still worth Nadia/whoever
-  reviewing S2-2 running it against a couple more "obviously uncontroversial" claims before
-  fully trusting it — 2 real runs is a small sample for something measured to be
-  non-deterministic.
-- New from S2-2, for Lila (DOC correction): `block.citations` never populates on real runs —
-  Sonnet 5 invokes `web_search` from inside an automatic, undeclared `code_execution` sandbox,
-  and text blocks carry no `citations` field in that mode. `worker/src/index.js` falls back to
-  raw `web_search_tool_result` content (url + title, `cited_text: null`) instead. DOC's
-  `citations [{url, title, cited_text}]` sketch and decision 17's rendering plan should note
-  `cited_text` is usually null in practice. Full detail in the S2-2 handoff.
-- Flagged, not mine to fix: Anthropic Console credit balance is $1.16 (checked directly,
-  2026-08-30), no auto-reload. Luke knows and will buy more if needed — worth checking before
-  further real-API sprint work (S2-7, more S2-2 verification, demo runs).
+- **Pending as of 2026-09-02, S5-4 close:** two deploys asked of Luke but not yet confirmed —
+  `npx wrangler deploy` (worker, ships the `/durations` ms→seconds fix) and
+  `npx wrangler pages deploy site` (site, ships S5-3's redesign and S5-4's chooser/firehose — the
+  live site was still the old MVP form as of this write-up). Whoever picks this project back up
+  as Cody should check these landed before doing anything else.
+- **The disconnect-guarantee gap (Cloudflare cancels outstanding subrequests on client disconnect,
+  capped at `ctx.waitUntil`'s 30s) is accepted, not fixed.** Not mine to schedule a real fix
+  (Cloudflare Queues) unless asked — see the S5-2 handoff for the full finding, and the DOC
+  promotion handed to Lila. Likely affects `/check` too, never independently verified there.
+- **Cloudflare KV's eventual-consistency lag** (observed up to roughly a minute between a write
+  and a read reflecting it, on production, repeatedly during S5-2/S5-4 testing) means the
+  firehose's live polling can visibly stall for a stretch before catching up. Known, not a bug;
+  flagged for Quinn/Nadia ahead of the live demo so it doesn't read as a hang.
+- Everything from Sprint 1-4 (citations, caching DOC corrections, refusal_category, S3-7
+  confirmation numbers) — resolved and applied by Lila across S3-R/S4-R. Nothing carried forward
+  from before Sprint 5.
