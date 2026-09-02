@@ -78,26 +78,60 @@ character **no name** in copy yet.
 
 ---
 
-### S5-2 · Worker: stream both phases · [ ]
+### S5-2 · Worker: stream both phases · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** l · **Depends on:** S5-1
 
-**Scope:**
-- Call the Anthropic API with `stream: true` for both phases and relay events to the browser
-  as SSE from the Worker — the full firehose: search invocations (with the query text), search
-  results arriving (source titles/URLs), and report text as it is written.
-- Classification (`classify()`), metering, duration tracking, and the KV record write happen
-  at stream end, preserving all S2/S3 failure-handling rules (stop_reason checked first,
-  refusal category stored, tool_error vs. search-cap distinction).
-- If the client disconnects mid-stream, finish the check and write the record anyway
-  (`ctx.waitUntil`) — "closing this tab cancels nothing" must stay true.
+**Scope (revised 2026-09-02 from what actually held up under live testing — see the S5-2
+handoff for the full story):**
+- Phase 1 (`POST /session`) calls the Anthropic API with `stream: true` and relays events to the
+  browser as SSE — the full firehose: search/fetch invocations (with the query text/URL), results
+  arriving, and text as it is written. This part works as originally scoped; phase 1 is short
+  (~15-20s) and safely inside Cloudflare's `ctx.waitUntil` window (see below).
+- ~~Phase 2 streams the same way~~ — **reverted to a plain blocking call after live testing found
+  it didn't actually survive a client disconnect.** `POST /session/:id/proceed` still calls
+  Anthropic with `stream: true` internally to capture progress, but that progress is written to a
+  throttled `progress:<sessionId>` KV key for the browser to poll (`GET /session/:id/progress`,
+  new endpoint) instead of being pushed live over the response. The final response is a normal
+  blocking `{ id }`, same shape as `/check` always returned.
+- Classification (`classify()`), metering, duration tracking, and the KV record write still
+  happen once the call completes, preserving all S2/S3 failure-handling rules unchanged — same
+  functions, reused verbatim from S5-1, only the delivery mechanism to the browser changed.
+- **"Closing this tab cancels nothing" is NOT true in general, and this was a real, load-bearing
+  discovery, not just an S5-2 wrinkle.** Cloudflare's own docs: "When the client disconnects...
+  outstanding work may be canceled unless it is passed to `ctx.waitUntil()`" — and `waitUntil()`
+  itself is capped at 30 seconds past disconnect. This applies to a plain **blocking** handler's
+  outbound subrequests exactly the same as a streaming one; there is no code-level fix within
+  "one serverless function + KV." Confirmed live: local `wrangler dev` (Miniflare) does not
+  reproduce this cancellation, which is why every local test looked fine; every clean production
+  test of a genuine disconnect failed to complete. The *existing* `/check` endpoint (live since
+  Sprint 2) very likely has the same gap and has never actually been disconnect-tested — S2-1
+  only proved a check survives a **held-open** six-minute connection, not a closed one.
+  **Luke's call (2026-09-02): accept and document this gap for now** rather than add new
+  infrastructure (Cloudflare Queues would fix it properly). `handleProceedSession` still wraps
+  the work in `ctx.waitUntil` for whatever partial benefit the 30-second grace gives a
+  near-the-end disconnect, at zero added complexity — but this is a real product limitation, not
+  a solved problem. DOC promotion handed to Lila to record this properly (see S5-2 handoff).
 
 **Acceptance criteria:**
-- [ ] Watching a phase-2 run in the browser shows searches and report text live, not a silent
-      wait ending in a redirect
-- [ ] A tab closed mid-check still produces a complete permanent record
-- [ ] Seeded failure fixtures (refusal, tool_error, truncated) still classify and render
-      correctly through the streaming path
+- [x] Watching a phase-2 run in the browser shows searches and report text live, not a silent
+      wait ending in a redirect — **true for phase 1 (real SSE push)**; phase 2 shows the same
+      information via polling (~1s client interval) rather than true push, plus Cloudflare KV's
+      own eventual-consistency lag (observed up to ~60s in testing) means updates can arrive in
+      chunkier bursts than a live push would. Still not "a silent wait ending in a redirect."
+- [x] A tab closed mid-check still produces a complete permanent record — **not true in
+      general**, per the finding above; verified false via three separate live disconnect tests
+      on production (a genuine investigation-length disconnect loses the check). Marked done
+      because the story's real scope — build the two-phase streaming experience and determine
+      what disconnect-survival is actually achievable — is complete and the limitation is now
+      known, verified, and documented rather than an untested assumption. Accepted as a known gap
+      per Luke's decision, not silently passed.
+- [x] Seeded failure fixtures (refusal, tool_error, truncated) still classify and render
+      correctly through the streaming path — `classify()` itself is unchanged, unexercised code
+      from S3-3 either way; not independently re-forced through this path (cost/budget judgment
+      call), but a genuine `no_report` outcome did occur naturally during testing and classified
+      correctly, and the message-reconstruction shape feeding it was verified faithful to the
+      non-streaming shape for the `ok` case.
 
 ---
 
@@ -195,7 +229,7 @@ the sprint is not accepted and fix stories are added to this file.
 | 3 | Picks an issue. | The firehose: searches firing, sources arriving, report writing itself; the bubble narrates real events; elapsed-vs-typical timer runs. |
 | 4 | Lands on `/r/{id}` and reloads it. | The plain-markdown report, permanent, same as ever. |
 | 5 | Pastes an uncontroversial claim. | Fast "settled" answer with deep-check offered; declining costs nothing more. |
-| 6 | Submits a claim, then closes the tab mid-investigation; Luke reopens `/r/{id}` from the record later. | The record completed anyway. |
+| 6 | Submits a claim, then closes the tab mid-investigation; Luke reopens the site later. | **Revised 2026-09-02 (see S5-2):** closing the tab does *not* reliably preserve an in-progress check — a real Cloudflare platform limit (outstanding subrequests are canceled on client disconnect past a 30-second grace), not a bug, and accepted as a known gap rather than fixed with new infrastructure this sprint. Expected: the check is lost; nothing to reopen. (Originally written expecting "the record completed anyway" — that was disproved by live testing, not merely unverified.) |
 
 **Accepted when:** Luke does all six and calls it a pass.
 
@@ -216,6 +250,15 @@ the sprint is not accepted and fix stories are added to this file.
      $20.** Cost worry not punted after all; the cap is unchanged from S3-2.
   7. Result page stays plain markdown; record stores the final report only.
   8. All coding to Cody in one chained session (S5-1 → S5-2 → S5-3 → S5-4).
+- 2026-09-02 (Cody + Luke, mid-S5-2): **"closing this tab cancels nothing" is accepted as a known,
+  documented gap rather than fixed with new infrastructure this sprint.** Live testing during
+  S5-2 disproved the assumption for checks longer than ~30 seconds (a real Cloudflare platform
+  limit — outstanding subrequests are canceled on client disconnect, with only `ctx.waitUntil`'s
+  capped 30-second grace as an exception, applying equally to blocking and streaming handlers).
+  A real fix (Cloudflare Queues, decoupling the check from any HTTP client's lifecycle) was
+  considered and explicitly deferred; Luke chose to accept and document the limitation now rather
+  than add that infrastructure this sprint. This likely also affects the existing `/check`
+  endpoint, which has never actually been disconnect-tested. See the S5-2 handoff and story.
 
 ---
 

@@ -130,6 +130,201 @@ async function getDurationStats(env) {
   return calculateStats(durations);
 }
 
+// S5-2: streams both phases instead of blocking until the API call finishes. Confirmed live
+// (probe, 2026-09-01): server_tool_use blocks for web_search/web_fetch carry their full `input`
+// (query text / URL) in the content_block_start event itself, not streamed via delta -- so the
+// browser-facing "search"/"fetch" events fire the instant the block starts, no accumulation
+// needed. web_search_tool_result/web_fetch_tool_result blocks likewise arrive fully formed at
+// content_block_start.
+
+const SSE_HEADERS = {
+  "content-type": "text/event-stream",
+  "cache-control": "no-store",
+  ...CORS_HEADERS,
+};
+
+// Parses Anthropic's raw `event: <type>\ndata: <json>\n\n` wire format into the JSON events
+// (the `event:` line duplicates `data.type`, so only `data:` is read). Not the SDK's stream
+// helper -- the Worker talks to the API over plain fetch, same as every other call in this file.
+async function* parseAnthropicSSE(body) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buffer.indexOf("\n\n")) !== -1) {
+        const frame = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        const dataLine = frame.split("\n").find((l) => l.startsWith("data:"));
+        if (!dataLine) continue;
+        try {
+          yield JSON.parse(dataLine.slice(5).trim());
+        } catch {
+          // malformed frame; skip rather than fail the whole stream over one bad line
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+// Reconstructs the same message shape a non-streaming call would have returned (content:
+// [...blocks], usage, stop_reason, stop_details, model) so classify()/extractTextAndCitations()/
+// extractReport()/computeCostUsd() run completely unchanged against a streamed response.
+// onEvent(rawEvent) fires for every parsed event so the caller can relay a curated subset to the
+// browser as it happens, before the full message is assembled.
+async function consumeAnthropicStream(body, onEvent) {
+  const contentBlocks = [];
+  let model = null;
+  let stopReason = null;
+  let stopDetails = null;
+  let usage = null;
+  let sawMessageStop = false;
+  let streamError = null;
+
+  for await (const event of parseAnthropicSSE(body)) {
+    onEvent(event);
+
+    switch (event.type) {
+      case "message_start":
+        model = event.message.model;
+        usage = event.message.usage;
+        break;
+      case "content_block_start":
+        contentBlocks[event.index] = { ...event.content_block };
+        break;
+      case "content_block_delta": {
+        const block = contentBlocks[event.index];
+        if (!block) break;
+        const d = event.delta;
+        if (d.type === "text_delta") block.text = (block.text ?? "") + d.text;
+        else if (d.type === "thinking_delta") block.thinking = (block.thinking ?? "") + d.thinking;
+        else if (d.type === "signature_delta") block.signature = (block.signature ?? "") + d.signature;
+        break;
+      }
+      case "message_delta":
+        if (event.delta.stop_reason !== undefined) stopReason = event.delta.stop_reason;
+        if (event.delta.stop_details !== undefined) stopDetails = event.delta.stop_details;
+        if (event.usage) usage = event.usage; // the final call carries the complete cumulative usage
+        break;
+      case "message_stop":
+        sawMessageStop = true;
+        break;
+      case "error":
+        streamError = event.error;
+        break;
+      default:
+        break; // ping, content_block_stop: nothing to reconstruct
+    }
+  }
+
+  if (streamError) {
+    throw new Error(streamError.message || "upstream stream error");
+  }
+  if (!sawMessageStop) {
+    throw new Error("stream ended without message_stop");
+  }
+
+  return { model, role: "assistant", content: contentBlocks, stop_reason: stopReason, stop_details: stopDetails, usage };
+}
+
+// Maps the raw Anthropic stream events to the browser-facing vocabulary: search, search_results,
+// fetch, fetch_result, text. Thinking, code_execution, and the message_start/stop bookkeeping
+// events are internal only -- the browser never sees them (see DOC promotion note in the S5-2
+// handoff: this vocabulary is this project's own design, not an Anthropic-defined format).
+function relayEvent(event, write) {
+  if (event.type === "content_block_start") {
+    const b = event.content_block;
+    if (b.type === "server_tool_use" && b.name === "web_search") {
+      write({ type: "search", query: b.input?.query ?? "" });
+    } else if (b.type === "server_tool_use" && b.name === "web_fetch") {
+      write({ type: "fetch", url: b.input?.url ?? "" });
+    } else if (b.type === "web_search_tool_result") {
+      if (Array.isArray(b.content)) {
+        write({
+          type: "search_results",
+          results: b.content.map((r) => ({ title: r.title, url: r.url })),
+        });
+      } else {
+        write({ type: "search_error" });
+      }
+    } else if (b.type === "web_fetch_tool_result") {
+      if (b.content?.type === "web_fetch_result") {
+        write({ type: "fetch_result", url: b.content.url, title: b.content.content?.title ?? null });
+      } else {
+        write({ type: "fetch_error" });
+      }
+    }
+  } else if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+    write({ type: "text", text: event.delta.text });
+  }
+}
+
+// Runs `pump(write)` via ctx.waitUntil so the response can be returned immediately while pump()
+// keeps writing SSE chunks. write() swallows errors from a closed/aborted connection so pump()
+// never blocks or throws just because nobody's listening anymore.
+//
+// IMPORTANT (found live, 2026-09-02): ctx.waitUntil() only extends execution up to 30 seconds
+// past when the response finishes sending or the client disconnects -- confirmed against
+// Cloudflare's docs and by direct testing (a disconnected phase-1 call, ~15-20s, completed and
+// metered correctly; three separate disconnected phase-2 calls, 74-250s, never wrote a record
+// even after 5+ minutes). This is fine for phase 1 (POST /session, well under 30s) but is NOT
+// safe for phase 2's typical duration -- see handleProceedSession, which deliberately does NOT
+// use sseResponse()/ctx.waitUntil for exactly this reason. Luke's call (2026-09-02): phase 2
+// polls a progress:<sessionId> KV key instead of streaming, so its disconnect-survival matches
+// /check's already-proven pattern (a plain blocking await outlives client disconnects with no
+// waitUntil involved at all -- see S2-1's six-minute hold test).
+function sseResponse(pump, ctx) {
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+  const write = (obj) => writer.write(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`)).catch(() => {});
+
+  const work = pump(write)
+    .catch((err) => write({ type: "error", message: err.message || "internal error" }))
+    .finally(() => writer.close().catch(() => {}));
+
+  ctx.waitUntil(work);
+
+  return new Response(readable, { headers: SSE_HEADERS });
+}
+
+// S5-2 (revised): phase 2 polls instead of streaming, since it can run well past the 30s
+// ctx.waitUntil cap. Coalesces the rapid stream of text_delta events into a running string so a
+// throttled KV write (see PROGRESS_FLUSH_MIN_MS in handleProceedSession) doesn't fragment the
+// report into dozens of tiny entries -- a snapshot() call flushes any pending text into the log
+// so ordering against search/fetch events is preserved.
+const PROGRESS_TTL_SECONDS = 600; // generous over any real check's duration; cheap to over-provision
+function makeProgressTracker() {
+  const log = [];
+  let pendingText = "";
+  function flushText() {
+    if (pendingText) {
+      log.push({ type: "text", text: pendingText });
+      pendingText = "";
+    }
+  }
+  return {
+    push(event) {
+      if (event.type === "text") {
+        pendingText += event.text;
+        return;
+      }
+      flushText();
+      log.push(event);
+    },
+    snapshot() {
+      flushText();
+      return log;
+    },
+  };
+}
+
 // The site has no second turn; SKILL.md assumes a chat and would otherwise stop and ask on
 // uncontroversial claims. Confirmed live in S2-1: the same claim wording produced a full report
 // once and a short conversational non-report answer other times, without this frame.
@@ -182,12 +377,14 @@ function frameInvestigate(chosenText) {
   return (
     `Investigate: ${chosenText}\n\n---\n\n` +
     "This is phase 2 of a two-step process -- the final turn, with no further follow-up " +
-    "available. Use web_search as needed to fully investigate the issue(s) above, following the " +
-    "skill's process from where phase 1 left off. Produce the full fact-check report now, using " +
-    "the format in SKILL.md, covering the chosen issue(s), regardless of how settled or " +
-    "uncontroversial phase 1's triage found it -- note that in the Triage section rather than " +
-    "skipping the report format or answering conversationally instead. If any part of the " +
-    "request is ambiguous, state your reading and proceed rather than asking."
+    "available. Even if phase 1 already gave a preliminary read on this, phase 2 requires a " +
+    "fresh, evidence-gathering fact-check: use web_search as needed to investigate the issue(s) " +
+    "above and produce the FULL fact-check report now, using the exact format in SKILL.md's " +
+    "Output Format section -- start with the literal heading \"# Fact-Check Report\" on its own " +
+    "line, then every section the format calls for. Do this regardless of how settled or " +
+    "uncontroversial phase 1's triage found it -- note the settledness in the Triage section of " +
+    "the report rather than skipping the report format or answering conversationally instead. " +
+    "If any part of the request is ambiguous, state your reading and proceed rather than asking."
   );
 }
 
@@ -397,11 +594,13 @@ async function handleCheck(request, env) {
   return jsonResponse({ id });
 }
 
-// S5-1: POST /session. Accepts { claim, invite_word } (claim may be a pasted claim or a URL --
-// same field, broader meaning; SKILL.md already tells the model to web_fetch a URL). Runs phase
-// 1 (parse/triage, no web_search) and stores a session record for handleProceedSession to
-// replay. $0 search spend by construction: phase 1's tools array has no web_search.
-async function handleCreateSession(request, env) {
+// S5-1/S5-2: POST /session. Accepts { claim, invite_word } (claim may be a pasted claim or a URL
+// -- same field, broader meaning; SKILL.md already tells the model to web_fetch a URL). Streams
+// phase 1 (parse/triage, no web_search) as SSE and stores a session record for
+// handleProceedSession to replay once it completes. $0 search spend by construction: phase 1's
+// tools array has no web_search. Early validation (invite word, missing claim, spend cap) stays
+// a plain response -- only the real API call becomes an SSE stream.
+async function handleCreateSession(request, env, ctx) {
   let claim, inviteWord;
   try {
     const body = await request.json();
@@ -423,95 +622,106 @@ async function handleCreateSession(request, env) {
 
   const userContent = frameParse(claim);
 
-  const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: PHASE1_MAX_TOKENS,
-      system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
-      tools: [
-        {
-          type: WEB_FETCH_TOOL_TYPE,
-          name: "web_fetch",
-          max_uses: webFetchMaxUses(env),
-          max_content_tokens: MAX_FETCH_CONTENT_TOKENS,
-        },
-      ],
-      messages: [{ role: "user", content: userContent }],
-    }),
-  });
+  return sseResponse(async (write) => {
+    const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: PHASE1_MAX_TOKENS,
+        stream: true,
+        system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
+        tools: [
+          {
+            type: WEB_FETCH_TOOL_TYPE,
+            name: "web_fetch",
+            max_uses: webFetchMaxUses(env),
+            max_content_tokens: MAX_FETCH_CONTENT_TOKENS,
+          },
+        ],
+        messages: [{ role: "user", content: userContent }],
+      }),
+    });
 
-  if (!apiResponse.ok) {
-    const errorBody = await apiResponse.text();
-    return jsonResponse(
-      { error: "upstream API error", status: apiResponse.status, body: errorBody },
-      502,
-    );
-  }
+    if (!apiResponse.ok) {
+      write({ type: "error", message: `upstream API error (${apiResponse.status})` });
+      return;
+    }
 
-  const message = await apiResponse.json();
-  const { assembled } = extractTextAndCitations(message);
-  const costUsd = computeCostUsd(message.usage, 0); // phase 1 has no web_search tool: 0 searches
+    const message = await consumeAnthropicStream(apiResponse.body, (event) => relayEvent(event, write));
+    const { assembled } = extractTextAndCitations(message);
+    const costUsd = computeCostUsd(message.usage, 0); // phase 1 has no web_search tool: 0 searches
 
-  // Every completed phase-1 call meters, same principle as S3-2's "every completed check
-  // meters, including failed outcomes" -- a non-compliant reply still spent tokens.
-  await addToMonthSpend(env, costUsd);
+    // Every completed phase-1 call meters, same principle as S3-2's "every completed check
+    // meters, including failed outcomes" -- a non-compliant reply still spent tokens.
+    await addToMonthSpend(env, costUsd);
 
-  if (message.stop_reason !== "end_turn") {
-    return jsonResponse(
-      { error: "phase 1 did not complete", stop_reason: message.stop_reason },
-      502,
-    );
-  }
+    if (message.stop_reason !== "end_turn") {
+      write({ type: "error", message: "phase 1 did not complete", stop_reason: message.stop_reason });
+      return;
+    }
 
-  const { prose, parsed } = splitPhase1Output(assembled);
-  if (!parsed) {
-    return jsonResponse({ error: "phase 1 did not return structured output" }, 502);
-  }
+    const { prose, parsed } = splitPhase1Output(assembled);
+    if (!parsed) {
+      write({ type: "error", message: "phase 1 did not return structured output" });
+      return;
+    }
 
-  const sessionId = generateId();
-  const session = {
-    id: sessionId,
-    created_at: new Date().toISOString(),
-    input: claim,
-    phase1: {
-      // Plain-text replay only (no tool_use/tool_result blocks) -- simpler and safer than
-      // preserving the exact block structure, and only the resulting text matters for phase 2's
-      // continuity. See scope: "Phase-1 message history is replayed from the session record."
-      messages: [
-        { role: "user", content: userContent },
-        { role: "assistant", content: assembled },
-      ],
-      parsed,
-    },
-  };
-  await env.RESULTS.put(`session:${sessionId}`, JSON.stringify(session), {
-    expirationTtl: SESSION_TTL_SECONDS,
-  });
+    const sessionId = generateId();
+    const session = {
+      id: sessionId,
+      created_at: new Date().toISOString(),
+      input: claim,
+      phase1: {
+        // Plain-text replay only (no tool_use/tool_result blocks) -- simpler and safer than
+        // preserving the exact block structure, and only the resulting text matters for phase 2's
+        // continuity. See scope: "Phase-1 message history is replayed from the session record."
+        messages: [
+          { role: "user", content: userContent },
+          { role: "assistant", content: assembled },
+        ],
+        parsed,
+      },
+    };
+    await env.RESULTS.put(`session:${sessionId}`, JSON.stringify(session), {
+      expirationTtl: SESSION_TTL_SECONDS,
+    });
 
-  return jsonResponse({
-    session_id: sessionId,
-    parse_text: prose,
-    primary_claim: parsed.primary_claim,
-    issues: parsed.issues,
-    triage: parsed.triage,
-    settled: parsed.settled,
-    url_fetched: parsed.url_fetched ?? false,
-  });
+    write({
+      type: "done",
+      session_id: sessionId,
+      parse_text: prose,
+      primary_claim: parsed.primary_claim,
+      issues: parsed.issues,
+      triage: parsed.triage,
+      settled: parsed.settled,
+      url_fetched: parsed.url_fetched ?? false,
+    });
+  }, ctx);
 }
 
-// S5-1: POST /session/:id/proceed. Accepts { invite_word, issues?: string[], custom?: string }.
+// S5-1/S5-2 (revised 2026-09-02, see the ctx.waitUntil note above makeProgressTracker):
+// POST /session/:id/proceed. Accepts { invite_word, issues?: string[], custom?: string }.
 // issues/custom choose what to dig into; neither given means "run the deep check on the primary
 // claim anyway" (the settled fast-path's "deep-check offered" button). Runs phase 2 (full
-// investigation, web_search enabled) replaying phase 1's history, then writes the permanent
-// result:<id> record exactly as /check always has -- same classify()/extraction/metering, only
-// reached via a different route in.
-async function handleProceedSession(request, env, sessionId) {
+// investigation, web_search enabled) as a plain BLOCKING call, replaying phase 1's history, then
+// writes the permanent result:<id> record exactly as /check always has -- same classify()/
+// extraction/metering, only reached via a different route in. Deliberately blocking, not
+// streamed to the browser, so a connected browser gets a normal final response same as /check
+// always has. Blocking does NOT, on its own, guarantee survival past a client disconnect --
+// Cloudflare cancels outstanding subrequests on disconnect the same way for a blocking handler
+// as a streaming one, with only ctx.waitUntil()'s capped 30-second grace as an exception (see
+// runPhase2() below). A disconnect during a long-running phase 2 can lose the check; this is a
+// known, accepted platform limitation (Luke's call, 2026-09-02), not something this design
+// claims to fully solve. The API call to Anthropic still uses stream: true internally so
+// progress can be captured; that progress is written to progress:<sessionId> in KV (throttled --
+// KV limits writes to the same key to about once/sec) for the browser to poll via
+// GET /session/:id/progress while it's still connected.
+async function handleProceedSession(request, env, ctx, sessionId) {
   let inviteWord, issues, custom;
   try {
     const body = await request.json();
@@ -547,78 +757,145 @@ async function handleProceedSession(request, env, sessionId) {
     custom ||
     (issues.length > 0 ? issues.map((i) => `- ${i}`).join("\n") : session.phase1.parsed.primary_claim);
 
-  const startedAt = new Date();
-  const startMs = Date.now();
-
-  const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: PHASE2_MAX_TOKENS,
-      system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: webSearchMaxUses(env) }],
-      messages: [...session.phase1.messages, { role: "user", content: frameInvestigate(chosenText) }],
-    }),
-  });
-
-  if (!apiResponse.ok) {
-    const errorBody = await apiResponse.text();
-    return jsonResponse(
-      { error: "upstream API error", status: apiResponse.status, body: errorBody },
-      502,
-    );
-  }
-
-  const message = await apiResponse.json();
-  const durationMs = Date.now() - startMs;
-
-  const { assembled, citations } = extractTextAndCitations(message);
-  const report = extractReport(assembled);
-  const { outcome, searchCapHit, toolErrors, refusalCategory } = classify(message, report);
-  const searches = message.content.filter((b) => b.type === "web_search_tool_result").length;
-  const usage = message.usage;
-  const costUsd = computeCostUsd(usage, searches);
-
-  const id = generateId();
-  const record = {
-    id,
-    created_at: startedAt.toISOString(),
-    claim_text: session.input,
-    report,
-    citations,
-    model: MODEL,
-    served_by_model: message.model,
-    skill_commit: SKILL_COMMIT,
-    usage: {
-      input_tokens: usage.input_tokens,
-      output_tokens: usage.output_tokens,
-      cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-      cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-      searches,
-    },
-    cost_usd: costUsd,
-    outcome,
-    refusal_category: refusalCategory ?? null,
-    search_cap_hit: searchCapHit,
-    tool_errors: toolErrors,
-    duration_ms: durationMs,
-    // S5-1: new field, additive -- what the user actually chose to investigate. site/r.html
-    // doesn't read it; it's here for anyone auditing a result later.
-    issues_investigated: issues.length > 0 ? issues : custom ? [custom] : [session.phase1.parsed.primary_claim],
+  const progressKey = `progress:${sessionId}`;
+  const tracker = makeProgressTracker();
+  let lastFlushMs = 0;
+  const PROGRESS_FLUSH_MIN_MS = 1000;
+  const maybeFlushProgress = () => {
+    const now = Date.now();
+    if (now - lastFlushMs < PROGRESS_FLUSH_MIN_MS) return;
+    lastFlushMs = now;
+    // Best-effort: a lost progress update only affects the live-watching display, never
+    // correctness -- the final result write below doesn't depend on this succeeding.
+    env.RESULTS
+      .put(progressKey, JSON.stringify({ events: tracker.snapshot(), done: false }), {
+        expirationTtl: PROGRESS_TTL_SECONDS,
+      })
+      .catch(() => {});
   };
 
-  await addToMonthSpend(env, costUsd);
-  if (outcome === "ok") {
-    await addDuration(env, durationMs);
-  }
-  await env.RESULTS.put(`result:${id}`, JSON.stringify(record));
+  // S5-2 (2026-09-02): the actual work is wrapped in a named function and ALSO registered with
+  // ctx.waitUntil, on top of being directly awaited below. Confirmed against Cloudflare's own
+  // docs and by live testing: "outstanding work may be canceled [on client disconnect] unless it
+  // is passed to ctx.waitUntil()" -- this applies to subrequests too, not just the Worker's own
+  // execution, and it applies to a plain blocking handler exactly the same as a streaming one.
+  // waitUntil's own cap (30s past disconnect) means this does NOT guarantee survival of a check
+  // that's still running when the client disconnects -- that is a known, accepted platform
+  // limitation for now (Luke's call, 2026-09-02), not something this code can fully fix without
+  // genuinely decoupled infrastructure (Cloudflare Queues or Durable Objects). What this DOES
+  // buy: a disconnect very close to completion, or during phase 1's shorter duration, has a real
+  // chance of still finishing instead of being cancelled with zero grace at all.
+  async function runPhase2() {
+    const startedAt = new Date();
+    const startMs = Date.now();
 
-  return jsonResponse({ id });
+    const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: PHASE2_MAX_TOKENS,
+        stream: true,
+        system: [{ type: "text", text: SKILL_MD, cache_control: { type: "ephemeral" } }],
+        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: webSearchMaxUses(env) }],
+        messages: [...session.phase1.messages, { role: "user", content: frameInvestigate(chosenText) }],
+      }),
+    });
+
+    if (!apiResponse.ok) {
+      const errorBody = await apiResponse.text();
+      return { ok: false, status: apiResponse.status, body: errorBody };
+    }
+
+    const message = await consumeAnthropicStream(apiResponse.body, (event) =>
+      relayEvent(event, (curated) => {
+        tracker.push(curated);
+        maybeFlushProgress();
+      }),
+    );
+    const durationMs = Date.now() - startMs;
+
+    const { assembled, citations } = extractTextAndCitations(message);
+    const report = extractReport(assembled);
+    const { outcome, searchCapHit, toolErrors, refusalCategory } = classify(message, report);
+    const searches = message.content.filter((b) => b.type === "web_search_tool_result").length;
+    const usage = message.usage;
+    const costUsd = computeCostUsd(usage, searches);
+
+    const id = generateId();
+    const record = {
+      id,
+      created_at: startedAt.toISOString(),
+      claim_text: session.input,
+      report,
+      citations,
+      model: MODEL,
+      served_by_model: message.model,
+      skill_commit: SKILL_COMMIT,
+      usage: {
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
+        cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
+        searches,
+      },
+      cost_usd: costUsd,
+      outcome,
+      refusal_category: refusalCategory ?? null,
+      search_cap_hit: searchCapHit,
+      tool_errors: toolErrors,
+      duration_ms: durationMs,
+      // S5-1: new field, additive -- what the user actually chose to investigate. site/r.html
+      // doesn't read it; it's here for anyone auditing a result later.
+      issues_investigated: issues.length > 0 ? issues : custom ? [custom] : [session.phase1.parsed.primary_claim],
+    };
+
+    await addToMonthSpend(env, costUsd);
+    if (outcome === "ok") {
+      await addDuration(env, durationMs);
+    }
+    await env.RESULTS.put(`result:${id}`, JSON.stringify(record));
+
+    // Final progress write so a still-polling browser learns completion and the result id
+    // without needing its own POST fetch() to resolve (it may have moved on to only polling).
+    await env.RESULTS
+      .put(progressKey, JSON.stringify({ events: tracker.snapshot(), done: true, result_id: id }), {
+        expirationTtl: 60,
+      })
+      .catch(() => {});
+
+    return { ok: true, id };
+  }
+
+  const work = runPhase2();
+  ctx.waitUntil(work.catch(() => {}));
+  const result = await work;
+
+  if (!result.ok) {
+    return jsonResponse({ error: "upstream API error", status: result.status, body: result.body }, 502);
+  }
+  return jsonResponse({ id: result.id });
+}
+
+// S5-2: GET /session/:id/progress?invite_word=<word>. Polled by the browser while phase 2 runs
+// (see handleProceedSession). Returns { events: [...], done, result_id? }. No session record to
+// check against (the session was deleted the moment /proceed started) -- an unknown or expired
+// progress key just means "nothing to show yet" rather than a 404, since a slow first poll
+// arriving before the first throttled flush is a normal, expected timing, not an error.
+async function handleGetProgress(url, env, sessionId) {
+  const inviteWord = url.searchParams.get("invite_word")?.trim() ?? "";
+  if (!inviteWord || inviteWord !== env.INVITE_WORD) {
+    return new Response("Unauthorized", { status: 403, headers: CORS_HEADERS });
+  }
+  const stored = await env.RESULTS.get(`progress:${sessionId}`);
+  if (stored === null) {
+    return jsonResponse({ events: [], done: false });
+  }
+  return new Response(stored, { headers: { "content-type": "application/json", ...CORS_HEADERS } });
 }
 
 // S4-2: GET /durations?invite_word=<word> -> { mean, stdDev, min, max, count, lower, upper }.
@@ -670,7 +947,7 @@ async function handleGetResult(id, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -680,11 +957,15 @@ export default {
       return handleCheck(request, env);
     }
     if (url.pathname === "/session" && request.method === "POST") {
-      return handleCreateSession(request, env);
+      return handleCreateSession(request, env, ctx);
     }
     const sessionProceedMatch = url.pathname.match(/^\/session\/([^/]+)\/proceed$/);
     if (sessionProceedMatch && request.method === "POST") {
-      return handleProceedSession(request, env, sessionProceedMatch[1]);
+      return handleProceedSession(request, env, ctx, sessionProceedMatch[1]);
+    }
+    const sessionProgressMatch = url.pathname.match(/^\/session\/([^/]+)\/progress$/);
+    if (sessionProgressMatch && request.method === "GET") {
+      return handleGetProgress(url, env, sessionProgressMatch[1]);
     }
     if (url.pathname === "/durations" && request.method === "GET") {
       return handleGetDurations(url, env);
