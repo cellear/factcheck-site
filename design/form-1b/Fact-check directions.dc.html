@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EFE6DA; font-family: "Inter", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #B5482A; }
+  a:hover { color: #D26A3F; }
+  textarea, input, button { font-family: inherit; }
+  textarea::placeholder, input::placeholder { color: #A09A92; }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+</style>
+</helmet>
+
+<section style="padding: 56px 56px 96px; display: flex; flex-direction: column; gap: 32px">
+  <div style="display: flex; flex-direction: column; gap: 8px; max-width: 760px">
+    <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #D26A3F">Turn 1 · two directions</div>
+    <h2 style="margin: 0; font-size: 34px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.02em">Same form, two ways to make the wait worth watching</h2>
+    <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #3F3A36; text-wrap: pretty">Both are live: paste a claim and press the button and they hit your worker. Both use an elapsed timer against the typical range rather than invented progress steps. <a href="#1a">1a</a> keeps everything on one slip of paper; <a href="#1b">1b</a> gives the checker a face and a desk.</p>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+
+    <div id="1a" style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 26px; padding: 0 9px; border-radius: 999px; background: #1F4D2E; color: #FCF2E2; font-size: 13px; font-weight: 700; letter-spacing: 0.04em">1a</span>
+        <span style="font-size: 19px; font-weight: 700; color: #1A1A1A">One slip of paper</span>
+        <span style="font-size: 15px; color: #6B655F">Invite word collapses away once remembered</span>
+      </div>
+
+      <div style="width: 660px; background: #F7E7D3; border-radius: 26px; padding: 44px 40px 34px; box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22)">
+        <sc-if value="{{ aIdle }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 22px">
+            <div style="display: flex; flex-direction: column; gap: 14px">
+              <h1 style="margin: 0; font-size: 42px; line-height: 1.05; font-weight: 800; color: #1A1A1A; letter-spacing: -0.025em">Fact-check a claim</h1>
+              <div style="width: 76px; height: 4px; border-radius: 2px; background: #D26A3F"></div>
+              <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3F3A36; text-wrap: pretty">Paste a claim below. Don't paste anything you want kept private — every completed check gets a permanent link, and that link is public to anyone who has it.</p>
+            </div>
+
+            <div style="background: #FFFCF6; border-radius: 22px; padding: 8px; box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18)">
+              <textarea ref="{{ aClaimRef }}" placeholder="Paste the claim you want checked..." style="width: 100%; min-height: 132px; box-sizing: border-box; border: none; outline: none; resize: vertical; background: transparent; padding: 16px; font-size: 17px; line-height: 1.5; color: #1A1A1A"></textarea>
+              <div style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 10px">
+                <span style="font-family: 'Caveat', cursive; font-size: 20px; color: #D26A3F">try this one</span>
+                <button type="button" onClick="{{ aUseExample }}" style="flex: 1; text-align: left; cursor: pointer; border: 1px dashed rgba(26,26,26,0.16); background: #FCF2E2; border-radius: 14px; padding: 9px 14px; font-size: 14px; line-height: 1.35; color: #3F3A36; transition: background 220ms cubic-bezier(0.2,0.7,0.3,1)" style-hover="background: #EFD9BC">The moon landing is fake because you can’t see the stars.</button>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap">
+              <button type="button" onClick="{{ aSubmit }}" style="cursor: pointer; border: none; border-radius: 18px; background: #1F4D2E; color: #FCF2E2; font-size: 17px; font-weight: 600; padding: 15px 30px; box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22); transition: background 220ms cubic-bezier(0.2,0.7,0.3,1)" style-hover="background: #3E6B45" style-active="transform: scale(0.98)">Check it</button>
+
+              <sc-if value="{{ aInviteCollapsed }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6B655F">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #3E6B45"></span>
+                  <span>Invite word remembered</span>
+                  <button type="button" onClick="{{ aEditInvite }}" style="cursor: pointer; border: none; background: none; padding: 0; font-size: 14px; color: #B5482A; text-decoration: underline; text-underline-offset: 3px">change</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ aInviteOpen }}" hint-placeholder-val="{{ false }}">
+                <input type="password" ref="{{ aInviteRef }}" placeholder="Invite word" style="width: 200px; box-sizing: border-box; border: 1px solid rgba(26,26,26,0.16); background: #FFFCF6; border-radius: 14px; padding: 12px 14px; font-size: 15px; color: #1A1A1A; outline: none">
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ aError }}" hint-placeholder-val="{{ false }}">
+              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #B5482A">{{ aMessage }}</p>
+            </sc-if>
+
+            <p style="margin: 0; font-size: 13px; color: #6B655F">Results get a permanent, shareable link once the check completes.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ aBusy }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 26px">
+            <div style="display: flex; align-items: center; gap: 18px">
+              <div style="width: 74px; height: 74px; border-radius: 50%; overflow: hidden; flex: none; box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22); animation: breathe 4s ease-in-out infinite">
+                <img src="assets/mascot-head.png" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px">
+                <div style="font-size: 26px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.015em">Reading the sources</div>
+                <div style="font-size: 15px; color: #6B655F">{{ aTypical }}</div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div style="height: 8px; border-radius: 999px; background: #EFD9BC; overflow: hidden">
+                <div style="height: 100%; border-radius: 999px; background: #D26A3F; transition: width 900ms linear; width: {{ aPct }}%"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px; color: #6B655F">
+                <span>{{ aElapsed }} elapsed</span>
+                <span style="font-family: 'Caveat', cursive; font-size: 19px; color: #D26A3F">{{ aAside }}</span>
+              </div>
+            </div>
+
+            <div style="background: #FFFCF6; border-radius: 22px; padding: 20px 22px; box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18)">
+              <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #A09A92; margin-bottom: 8px">The claim</div>
+              <div style="font-size: 17px; line-height: 1.5; color: #1A1A1A; font-style: italic">{{ aClaimText }}</div>
+            </div>
+
+            <p style="margin: 0; font-size: 13px; color: #6B655F">You'll land on the permanent link the moment it's done. Closing this tab cancels nothing.</p>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div id="1b" style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 26px; padding: 0 9px; border-radius: 999px; background: #1F4D2E; color: #FCF2E2; font-size: 13px; font-weight: 700; letter-spacing: 0.04em">1b</span>
+        <span style="font-size: 19px; font-weight: 700; color: #1A1A1A">Someone's on it</span>
+        <span style="font-size: 15px; color: #6B655F">The checker has a desk; the wait has a companion</span>
+      </div>
+
+      <div style="width: 760px; background: #F7E7D3; border-radius: 26px; overflow: hidden; box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22); display: grid; grid-template-columns: 268px 1fr">
+        <div style="position: relative; background: #EFD9BC; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; min-height: 520px">
+          <img src="assets/mascot-builder.png" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% top; display: block">
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: linear-gradient(to bottom, rgba(239,217,188,0) 0%, rgba(239,217,188,0.82) 62%, #EFD9BC 100%)"></div>
+          <div style="position: relative; margin: 18px; align-self: flex-start; background: #FCF2E2; border-radius: 18px; padding: 10px 16px; box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18); font-family: 'Caveat', cursive; font-size: 24px; line-height: 1.15; color: #B5482A">{{ bAnnotation }}</div>
+        </div>
+
+        <div style="padding: 34px 34px 28px; display: flex; flex-direction: column; gap: 20px">
+          <div style="align-self: flex-start; background: #1F4D2E; color: #FCF2E2; border-radius: 36px; padding: 12px 26px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Fact-check a claim</div>
+
+          <sc-if value="{{ bIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 18px">
+              <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #3F3A36; text-wrap: pretty">Paste a claim below. Don't paste anything you want kept private — every completed check gets a permanent link, and that link is public to anyone who has it.</p>
+
+              <textarea ref="{{ bClaimRef }}" placeholder="Paste the claim you want checked..." style="width: 100%; min-height: 118px; box-sizing: border-box; border: 1px solid rgba(26,26,26,0.08); outline: none; resize: vertical; background: #FFFCF6; border-radius: 18px; padding: 16px; font-size: 16px; line-height: 1.5; color: #1A1A1A; box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18)"></textarea>
+
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #A09A92">Or start from</span>
+                <button type="button" onClick="{{ bUseExample }}" style="cursor: pointer; border: 1px solid rgba(26,26,26,0.16); background: #FCF2E2; border-radius: 999px; padding: 8px 16px; font-size: 14px; color: #3F3A36; transition: background 220ms cubic-bezier(0.2,0.7,0.3,1)" style-hover="background: #EFD9BC">The moon landing is fake because you can’t see the stars.</button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+                <button type="button" onClick="{{ bSubmit }}" style="cursor: pointer; border: none; border-radius: 18px; background: #D26A3F; color: #FFFCF6; font-size: 17px; font-weight: 600; padding: 15px 30px; box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22); transition: background 220ms cubic-bezier(0.2,0.7,0.3,1)" style-hover="background: #B5482A" style-active="transform: scale(0.98)">Check it</button>
+                <sc-if value="{{ bInviteCollapsed }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6B655F">
+                    <span>Invited as <strong style="font-weight: 600; color: #3F3A36">{{ bInviteMask }}</strong></span>
+                    <button type="button" onClick="{{ bEditInvite }}" style="cursor: pointer; border: none; background: none; padding: 0; font-size: 14px; color: #B5482A; text-decoration: underline; text-underline-offset: 3px">change</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ bInviteOpen }}" hint-placeholder-val="{{ false }}">
+                  <input type="password" ref="{{ bInviteRef }}" placeholder="Invite word" style="width: 180px; box-sizing: border-box; border: 1px solid rgba(26,26,26,0.16); background: #FFFCF6; border-radius: 14px; padding: 12px 14px; font-size: 15px; color: #1A1A1A; outline: none">
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ bError }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #B5482A">{{ bMessage }}</p>
+              </sc-if>
+
+              <p style="margin: 0; font-size: 13px; color: #6B655F">Results get a permanent, shareable link once the check completes.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ bBusy }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 22px">
+              <div style="background: #FFFCF6; border-radius: 22px; padding: 26px; box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18); display: flex; flex-direction: column; gap: 18px">
+                <div style="display: flex; align-items: flex-end; gap: 12px">
+                  <div style="font-size: 56px; line-height: 0.9; font-weight: 800; color: #1A1A1A; letter-spacing: -0.03em">{{ bElapsed }}</div>
+                  <div style="font-size: 15px; color: #6B655F; padding-bottom: 6px">{{ bTypical }}</div>
+                </div>
+                <div style="height: 8px; border-radius: 999px; background: #EFD9BC; overflow: hidden">
+                  <div style="height: 100%; border-radius: 999px; background: #1F4D2E; transition: width 900ms linear; width: {{ bPct }}%"></div>
+                </div>
+                <div style="font-size: 15px; line-height: 1.5; color: #3F3A36">{{ bStatusLine }}</div>
+              </div>
+
+              <div>
+                <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #A09A92; margin-bottom: 8px">Checking</div>
+                <div style="font-size: 17px; line-height: 1.5; color: #1A1A1A; font-style: italic">{{ bClaimText }}</div>
+              </div>
+
+              <p style="margin: 0; font-size: 13px; color: #6B655F">You'll land on the permanent link the moment it's done.</p>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;previewState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;idle&quot;,&quot;waiting&quot;,&quot;overrun&quot;],&quot;default&quot;:&quot;idle&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview&quot;}}">
+const API_BASE = "https://factcheck-worker.lm2000.workers.dev";
+const DEFAULT_SECONDS = 90;
+const EXAMPLE = "The moon landing is fake because you can\u2019t see the stars.";
+
+class Component extends DCLogic {
+  state = {
+    invite: "",
+    inviteOpen: true,
+    a: { status: "idle", elapsed: 0, message: "", claim: "", stats: null },
+    b: { status: "idle", elapsed: 0, message: "", claim: "", stats: null },
+  };
+
+  claimRefs = { a: React.createRef(), b: React.createRef() };
+  inviteRefs = { a: React.createRef(), b: React.createRef() };
+  timers = {};
+
+  componentDidMount() {
+    let stored = "";
+    try { stored = localStorage.getItem("invite_word") || ""; } catch {}
+    if (stored) this.setState({ invite: stored, inviteOpen: false });
+    const preview = this.props.previewState;
+    if (preview && preview !== "idle") {
+      const claim = EXAMPLE;
+      const elapsed = preview === "overrun" ? 210 : 34;
+      this.setState(s => ({
+        a: { ...s.a, status: "busy", claim, elapsed },
+        b: { ...s.b, status: "busy", claim, elapsed },
+      }));
+    }
+  }
+
+  componentWillUnmount() {
+    Object.values(this.timers).forEach(t => clearInterval(t));
+  }
+
+  set(key, patch) {
+    this.setState(s => ({ [key]: { ...s[key], ...patch } }));
+  }
+
+  startTimer(key) {
+    clearInterval(this.timers[key]);
+    this.timers[key] = setInterval(() => {
+      this.setState(s => ({ [key]: { ...s[key], elapsed: s[key].elapsed + 1 } }));
+    }, 1000);
+  }
+
+  useExample(key) {
+    const el = this.claimRefs[key].current;
+    if (el) { el.value = EXAMPLE; el.focus(); }
+  }
+
+  editInvite(key) {
+    this.setState({ inviteOpen: true }, () => {
+      const el = this.inviteRefs[key].current;
+      if (el) el.focus();
+    });
+  }
+
+  async submit(key) {
+    const claim = (this.claimRefs[key].current?.value || "").trim();
+    const typed = (this.inviteRefs[key].current?.value || "").trim();
+    const invite = typed || this.state.invite;
+    if (!claim) {
+      this.set(key, { status: "error", message: "Paste a claim first." });
+      return;
+    }
+    if (!invite) {
+      this.setState({ inviteOpen: true });
+      this.set(key, { status: "error", message: "An invite word is needed." });
+      return;
+    }
+    if (typed) {
+      try { localStorage.setItem("invite_word", typed); } catch {}
+      this.setState({ invite: typed, inviteOpen: false });
+    }
+
+    let stats = null;
+    try {
+      const r = await fetch(`${API_BASE}/durations?invite_word=${encodeURIComponent(invite)}`);
+      if (r.ok) stats = await r.json();
+    } catch {}
+
+    this.set(key, { status: "busy", claim, elapsed: 0, message: "", stats });
+    this.startTimer(key);
+
+    const fail = (message) => {
+      clearInterval(this.timers[key]);
+      this.set(key, { status: "error", message });
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/check`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ claim, invite_word: invite }),
+      });
+      if (res.status === 403) return fail("Invite word is incorrect.");
+      if (res.status === 402) return fail("Monthly budget reached — checks are paused until next month.");
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      if (!data.id) throw new Error("no id");
+      clearInterval(this.timers[key]);
+      window.location.href = `/r/${data.id}`;
+    } catch {
+      fail("Something went wrong reaching the checker — please try again.");
+    }
+  }
+
+  fmt(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m > 0 ? `${m}m ${String(s).padStart(2, "0")}s` : `${s}s`;
+  }
+
+  view(key) {
+    const d = this.state[key];
+    const lower = d.stats?.lower ?? null;
+    const upper = d.stats?.upper ?? DEFAULT_SECONDS;
+    const range = lower !== null && d.stats?.upper != null ? `${lower}–${upper}s` : `${DEFAULT_SECONDS}s`;
+    const overrun = d.elapsed > upper + 30;
+    const pct = Math.min(97, Math.round((d.elapsed / (upper + 30)) * 100));
+    const asides = ["reading…", "weighing sources…", "still going…", "nearly there…"];
+    return {
+      idle: d.status !== "busy",
+      busy: d.status === "busy",
+      error: d.status === "error" && !!d.message,
+      message: d.message,
+      claimText: d.claim,
+      elapsed: this.fmt(d.elapsed),
+      pct: overrun ? 97 : pct,
+      typical: overrun ? "past the usual range" : `typically ${range}`,
+      aside: asides[Math.min(asides.length - 1, Math.floor(d.elapsed / 25))],
+      statusLine: overrun
+        ? "Still checking — claims that need many sources can take up to six minutes."
+        : `Most checks land inside ${range}. Nothing to do but wait.`,
+      annotation: d.status === "busy"
+        ? (overrun ? "this one's a knot…" : "on it — give me a minute")
+        : "one claim at a time",
+    };
+  }
+
+  renderVals() {
+    const a = this.view("a");
+    const b = this.view("b");
+    const invite = this.state.invite;
+    const collapsed = !this.state.inviteOpen && !!invite;
+    return {
+      aIdle: a.idle, aBusy: a.busy, aError: a.error, aMessage: a.message,
+      aClaimText: a.claimText, aElapsed: a.elapsed, aPct: a.pct, aTypical: a.typical, aAside: a.aside,
+      bIdle: b.idle, bBusy: b.busy, bError: b.error, bMessage: b.message,
+      bClaimText: b.claimText, bElapsed: b.elapsed, bPct: b.pct, bTypical: b.typical,
+      bStatusLine: b.statusLine, bAnnotation: b.annotation,
+      aInviteCollapsed: collapsed, aInviteOpen: !collapsed,
+      bInviteCollapsed: collapsed, bInviteOpen: !collapsed,
+      bInviteMask: invite ? "•".repeat(Math.min(8, invite.length)) : "",
+      aClaimRef: this.claimRefs.a, bClaimRef: this.claimRefs.b,
+      aInviteRef: this.inviteRefs.a, bInviteRef: this.inviteRefs.b,
+      aSubmit: () => this.submit("a"), bSubmit: () => this.submit("b"),
+      aUseExample: () => this.useExample("a"), bUseExample: () => this.useExample("b"),
+      aEditInvite: () => this.editInvite("a"), bEditInvite: () => this.editInvite("b"),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -135,7 +135,7 @@ handoff for the full story):**
 
 ---
 
-### S5-3 · Site: design 1b — the form page · [ ]
+### S5-3 · Site: design 1b — the form page · [x]
 
 **Owner:** Cody · **Model:** `claude-sonnet-5` · **Size:** m · **Depends on:** —
 
@@ -148,10 +148,27 @@ handoff for the full story):**
   for provenance; `INCOMING/` is Luke's to clean up afterward.
 - Mascot art is a placeholder — reference it from one place so swapping the character later is
   a one-file change; no character name in any copy.
+- **Also done, beyond the idle-state-only scope as written:** wired the submit button to the new
+  session flow (`POST /session`, consuming the SSE stream client-side) and built a minimal,
+  intentionally unstyled placeholder for the post-submit chooser (primary claim, issues list, a
+  "run the deep check anyway"/"check the primary claim" button that calls
+  `POST /session/:id/proceed` and redirects to `/r/{id}`) — S5-4 owns the real chooser/firehose
+  design, but the flow needed to be end-to-end functional to verify the AC live rather than stub
+  it out entirely.
+- Mascot image resized/converted (760×1000 PNG, 1.2MB → 700×921 WebP, ~49KB) before shipping to
+  `site/assets/` — the original PNG stayed in `design/form-1b/assets/` for provenance; serving a
+  1.2MB decorative image to every visitor didn't fit the project's "as close to nothing as
+  possible" spirit even loosely applied to asset weight.
 
 **Acceptance criteria:**
-- [ ] The deployed form page matches direction 1b's idle state and submits to the session flow
-- [ ] Mascot art swap requires touching only the asset file(s), not markup in many places
+- [x] The deployed form page matches direction 1b's idle state and submits to the session flow
+      — verified in a real browser (screenshot compared against the design mockup) and via a
+      live end-to-end submission (real claim, real invite word, phase 1 completed and rendered
+      real triage/primary-claim/issues data). Did not click through to phase 2 in this browser
+      test to avoid spending on a call already thoroughly verified at the worker level in
+      S5-1/S5-2.
+- [x] Mascot art swap requires touching only the asset file(s), not markup in many places — the
+      image filename (`assets/mascot-builder.webp`) appears exactly once in `site/index.html`.
 
 ---
 

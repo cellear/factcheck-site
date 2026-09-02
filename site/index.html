@@ -4,176 +4,483 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fact-check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root { color-scheme: light dark; }
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    max-width: 40rem;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    line-height: 1.5;
+    margin: 0;
+    background: #EFE6DA;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #1A1A1A;
+    padding: 48px 20px;
+  }
+  a { color: #B5482A; }
+  a:hover { color: #D26A3F; }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card {
+    background: #F7E7D3;
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22);
+    display: grid;
+    grid-template-columns: 268px 1fr;
+  }
+  @media (max-width: 620px) {
+    .card { grid-template-columns: 1fr; }
+    .mascot-panel { min-height: 220px !important; }
+  }
+  .mascot-panel {
+    position: relative;
+    background: #EFD9BC;
+    overflow: hidden;
+    min-height: 520px;
+  }
+  .mascot-panel img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 60% top;
+    display: block;
+  }
+  .mascot-panel .fade {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 46%;
+    background: linear-gradient(to bottom, rgba(239,217,188,0) 0%, rgba(239,217,188,0.82) 62%, #EFD9BC 100%);
+  }
+  .bubble {
+    position: relative;
+    margin: 18px;
+    align-self: flex-start;
+    background: #FCF2E2;
+    border-radius: 18px;
+    padding: 10px 16px;
+    box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18);
+    font-family: "Caveat", cursive;
+    font-size: 24px;
+    line-height: 1.15;
+    color: #B5482A;
+    max-width: calc(100% - 36px);
+  }
+  .panel {
+    padding: 34px 34px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .pill-title {
+    align-self: flex-start;
+    background: #1F4D2E;
+    color: #FCF2E2;
+    border-radius: 36px;
+    padding: 12px 26px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .intro {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #3F3A36;
   }
   textarea {
     width: 100%;
-    min-height: 8rem;
-    font: inherit;
-    padding: 0.75rem;
+    min-height: 118px;
     box-sizing: border-box;
+    border: 1px solid rgba(26,26,26,0.08);
+    outline: none;
+    resize: vertical;
+    background: #FFFCF6;
+    border-radius: 18px;
+    padding: 16px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #1A1A1A;
+    font-family: inherit;
+    box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18);
   }
-  button {
-    font: inherit;
-    padding: 0.6rem 1.4rem;
-    margin-top: 0.75rem;
-    cursor: pointer;
+  textarea::placeholder { color: #A09A92; }
+  .example-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
   }
-  button:disabled { cursor: not-allowed; opacity: 0.6; }
-  #status {
-    margin-top: 1rem;
+  .example-label {
+    font-size: 12px;
     font-weight: 600;
-    min-height: 1.4em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #A09A92;
   }
-  .privacy-note {
-    font-size: 0.85em;
-    opacity: 0.75;
-    margin-top: 0.5rem;
+  .example-chip {
+    cursor: pointer;
+    border: 1px solid rgba(26,26,26,0.16);
+    background: #FCF2E2;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #3F3A36;
+    font-family: inherit;
+    transition: background 220ms cubic-bezier(0.2,0.7,0.3,1);
   }
+  .example-chip:hover { background: #EFD9BC; }
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  button.submit {
+    cursor: pointer;
+    border: none;
+    border-radius: 18px;
+    background: #D26A3F;
+    color: #FFFCF6;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 15px 30px;
+    font-family: inherit;
+    box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 12px 28px -8px rgba(74,50,30,0.22);
+    transition: background 220ms cubic-bezier(0.2,0.7,0.3,1);
+  }
+  button.submit:hover { background: #B5482A; }
+  button.submit:active { transform: scale(0.98); }
+  button.submit:disabled { cursor: not-allowed; opacity: 0.6; }
+  .invite-collapsed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #6B655F;
+  }
+  .invite-collapsed strong { font-weight: 600; color: #3F3A36; }
+  .invite-collapsed button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 14px;
+    color: #B5482A;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-family: inherit;
+  }
+  input[type="password"] {
+    width: 180px;
+    box-sizing: border-box;
+    border: 1px solid rgba(26,26,26,0.16);
+    background: #FFFCF6;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: #1A1A1A;
+    outline: none;
+    font-family: inherit;
+  }
+  .error-msg {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #B5482A;
+  }
+  .footnote {
+    margin: 0;
+    font-size: 13px;
+    color: #6B655F;
+  }
+  #choose-area {
+    background: #FFFCF6;
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(74,50,30,0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #3F3A36;
+  }
+  #choose-area h2 { margin: 0; font-size: 18px; color: #1A1A1A; }
+  #choose-area ul { margin: 0; padding-left: 20px; }
+  #choose-area .status-line { font-style: italic; color: #6B655F; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-  <h1>Fact-check a claim</h1>
-  <p>Paste a claim below. Don't paste anything you want kept private — every completed check
-     gets a permanent link, and that link is public to anyone who has it.</p>
+  <div class="wrap">
+    <div class="card">
+      <div class="mascot-panel">
+        <img src="assets/mascot-builder.webp" alt="">
+        <div class="fade"></div>
+        <div class="bubble" id="bubble">one claim at a time</div>
+      </div>
+      <div class="panel">
+        <div class="pill-title">Fact-check a claim</div>
 
-  <form id="check-form">
-    <textarea id="claim" placeholder="Paste the claim you want checked..." required></textarea>
-    <br>
-    <input id="invite-word" type="password" placeholder="Invite word" required style="width: 100%; padding: 0.75rem; box-sizing: border-box; margin-top: 0.75rem;">
-    <br>
-    <button id="submit-btn" type="submit">Check it</button>
-  </form>
+        <form id="check-form">
+          <p class="intro">Paste a claim below — or a link to an article. Don't paste anything
+            you want kept private — every completed check gets a permanent link, and that link
+            is public to anyone who has it.</p>
 
-  <p id="status" aria-live="polite"></p>
+          <textarea id="claim" placeholder="Paste a claim or a link you want checked..." required></textarea>
+
+          <div class="example-row" style="margin-top: 14px;">
+            <span class="example-label">Or start from</span>
+            <button type="button" class="example-chip" id="use-example">The moon landing is fake because you can’t see the stars.</button>
+          </div>
+
+          <div class="action-row" style="margin-top: 14px;">
+            <button type="submit" class="submit" id="submit-btn">Check it</button>
+
+            <div class="invite-collapsed" id="invite-collapsed" hidden>
+              <span>Invited as <strong id="invite-mask"></strong></span>
+              <button type="button" id="edit-invite">change</button>
+            </div>
+            <input type="password" id="invite-word" placeholder="Invite word">
+          </div>
+
+          <p class="error-msg" id="error-msg" hidden></p>
+
+          <p class="footnote">Results get a permanent, shareable link once the check completes.</p>
+        </form>
+
+        <div id="choose-area" hidden></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const API_BASE = "https://factcheck-worker.lm2000.workers.dev";
-    const DEFAULT_COUNTDOWN_SECONDS = 90;
+    const EXAMPLE_CLAIM = "The moon landing is fake because you can’t see the stars.";
 
     const form = document.getElementById("check-form");
     const textarea = document.getElementById("claim");
     const inviteWordInput = document.getElementById("invite-word");
+    const inviteCollapsed = document.getElementById("invite-collapsed");
+    const inviteMask = document.getElementById("invite-mask");
+    const editInviteBtn = document.getElementById("edit-invite");
+    const useExampleBtn = document.getElementById("use-example");
     const submitBtn = document.getElementById("submit-btn");
-    const statusEl = document.getElementById("status");
+    const errorMsg = document.getElementById("error-msg");
+    const chooseArea = document.getElementById("choose-area");
+    const bubble = document.getElementById("bubble");
 
-    let countdownTimer = null;
-    let durationStats = null;
-
-    function loadInviteWordFromStorage() {
-      try {
-        const stored = localStorage.getItem("invite_word");
-        if (stored) {
-          inviteWordInput.value = stored;
-        }
-      } catch {
-        // localStorage access failed; render fine with empty value
-      }
+    function showError(text) {
+      errorMsg.textContent = text;
+      errorMsg.hidden = false;
+    }
+    function clearError() {
+      errorMsg.hidden = true;
     }
 
-    function saveInviteWordToStorage(word) {
+    function loadInviteWord() {
+      try {
+        return localStorage.getItem("invite_word") || "";
+      } catch {
+        return "";
+      }
+    }
+    function saveInviteWord(word) {
       try {
         localStorage.setItem("invite_word", word);
       } catch {
-        // localStorage access failed; just proceed
+        // localStorage access failed; proceed without persisting
       }
     }
 
-    loadInviteWordFromStorage();
+    function renderInviteState() {
+      const stored = loadInviteWord();
+      if (stored) {
+        inviteMask.textContent = "•".repeat(Math.min(8, stored.length));
+        inviteCollapsed.hidden = false;
+        inviteWordInput.hidden = true;
+      } else {
+        inviteCollapsed.hidden = true;
+        inviteWordInput.hidden = false;
+      }
+    }
+    renderInviteState();
 
-    async function fetchDurationStats(inviteWord) {
-      try {
-        const response = await fetch(`${API_BASE}/durations?invite_word=${encodeURIComponent(inviteWord)}`);
-        if (response.ok) {
-          durationStats = await response.json();
+    editInviteBtn.addEventListener("click", () => {
+      inviteCollapsed.hidden = true;
+      inviteWordInput.hidden = false;
+      inviteWordInput.value = "";
+      inviteWordInput.focus();
+    });
+
+    useExampleBtn.addEventListener("click", () => {
+      textarea.value = EXAMPLE_CLAIM;
+      textarea.focus();
+    });
+
+    // Reads a fetch() Response's body as this project's SSE-like wire format: lines of
+    // `data: {...}\n\n`. Not a real EventSource (POST bodies + custom headers aren't possible
+    // with EventSource), just a plain ReadableStream reader. See worker/src/index.js's
+    // parseAnthropicSSE for the server-side counterpart of this pattern.
+    async function* readEvents(response) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buffer.indexOf("\n\n")) !== -1) {
+          const frame = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 2);
+          const dataLine = frame.split("\n").find((l) => l.startsWith("data:"));
+          if (!dataLine) continue;
+          try {
+            yield JSON.parse(dataLine.slice(5).trim());
+          } catch {
+            // malformed frame; skip
+          }
         }
-      } catch {
-        // If fetch fails, just use defaults
       }
     }
 
-    function startCountdown() {
-      let countdownLabel = `${DEFAULT_COUNTDOWN_SECONDS}s`;
-      if (durationStats && durationStats.lower !== null && durationStats.upper !== null) {
-        countdownLabel = `${durationStats.lower}–${durationStats.upper}s`;
+    // S5-3: minimal, unstyled placeholder for what happens after phase 1 completes -- S5-4 owns
+    // the real chooser + firehose UI. This exists only so the form is fully functional end to
+    // end (the story's AC: "submits to the session flow") ahead of S5-4 landing.
+    function renderChoices(sessionId, inviteWord, data) {
+      form.hidden = true;
+      chooseArea.hidden = false;
+      chooseArea.innerHTML = "";
+      bubble.textContent = data.settled ? "settled — dig deeper?" : "which one first?";
+
+      const triageLine = document.createElement("p");
+      triageLine.className = "status-line";
+      triageLine.textContent = `Triage: ${data.triage}${data.settled ? " (settled)" : ""}`;
+      chooseArea.appendChild(triageLine);
+
+      const heading = document.createElement("h2");
+      heading.textContent = data.primary_claim;
+      chooseArea.appendChild(heading);
+
+      const list = document.createElement("ul");
+      for (const issue of data.issues) {
+        const li = document.createElement("li");
+        li.textContent = issue;
+        list.appendChild(li);
       }
-      statusEl.textContent = `Checking... typically ${countdownLabel}`;
-      const maxCountdown = (durationStats?.upper ?? DEFAULT_COUNTDOWN_SECONDS) + 30;
-      let remaining = maxCountdown;
-      countdownTimer = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-          clearInterval(countdownTimer);
-          countdownTimer = null;
-          statusEl.textContent =
-            "Still checking — claims that need many sources can take up to six minutes.";
-        } else {
-          statusEl.textContent = `Checking... typically ${countdownLabel} (${remaining}s)`;
+      chooseArea.appendChild(list);
+
+      const proceedBtn = document.createElement("button");
+      proceedBtn.type = "button";
+      proceedBtn.className = "submit";
+      proceedBtn.textContent = data.settled ? "Run the deep check anyway" : "Check the primary claim";
+      chooseArea.appendChild(proceedBtn);
+
+      const status = document.createElement("p");
+      status.className = "status-line";
+      chooseArea.appendChild(status);
+
+      proceedBtn.addEventListener("click", async () => {
+        proceedBtn.disabled = true;
+        status.textContent = "Investigating… this can take a minute or more.";
+        bubble.textContent = "on it — give me a minute";
+        try {
+          const response = await fetch(`${API_BASE}/session/${sessionId}/proceed`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ invite_word: inviteWord }),
+          });
+          if (!response.ok) {
+            throw new Error(`proceed failed with status ${response.status}`);
+          }
+          const result = await response.json();
+          if (!result.id) throw new Error("no id returned");
+          window.location.href = `/r/${result.id}`;
+        } catch (err) {
+          status.textContent = "Something went wrong finishing the check — please try again.";
+          proceedBtn.disabled = false;
         }
-      }, 1000);
+      });
     }
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const claim = textarea.value.trim();
-      const inviteWord = inviteWordInput.value.trim();
-      if (!claim || !inviteWord) return;
+      clearError();
 
-      saveInviteWordToStorage(inviteWord);
-      await fetchDurationStats(inviteWord);
+      const claim = textarea.value.trim();
+      const typedInvite = inviteWordInput.hidden ? "" : inviteWordInput.value.trim();
+      const inviteWord = typedInvite || loadInviteWord();
+
+      if (!claim) return;
+      if (!inviteWord) {
+        showError("An invite word is needed.");
+        inviteCollapsed.hidden = true;
+        inviteWordInput.hidden = false;
+        return;
+      }
+      if (typedInvite) {
+        saveInviteWord(typedInvite);
+        renderInviteState();
+      }
+
       submitBtn.disabled = true;
       textarea.disabled = true;
-      inviteWordInput.disabled = true;
-      startCountdown();
+      bubble.textContent = "reading…";
 
       try {
-        const response = await fetch(`${API_BASE}/check`, {
+        const response = await fetch(`${API_BASE}/session`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ claim, invite_word: inviteWord }),
         });
+
         if (response.status === 403) {
-          statusEl.textContent = "Invite word is incorrect.";
+          showError("Invite word is incorrect.");
           submitBtn.disabled = false;
           textarea.disabled = false;
-          inviteWordInput.disabled = false;
-          if (countdownTimer) clearInterval(countdownTimer);
+          bubble.textContent = "one claim at a time";
           return;
         }
         if (response.status === 402) {
-          statusEl.textContent = "Monthly budget reached — checks are paused until next month.";
+          showError("Monthly budget reached — checks are paused until next month.");
           submitBtn.disabled = false;
           textarea.disabled = false;
-          inviteWordInput.disabled = false;
-          if (countdownTimer) clearInterval(countdownTimer);
+          bubble.textContent = "one claim at a time";
           return;
         }
         if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
+          throw new Error(`request failed with status ${response.status}`);
         }
-        const data = await response.json();
-        if (!data.id) {
-          throw new Error("No id returned");
+
+        let finalData = null;
+        for await (const evt of readEvents(response)) {
+          if (evt.type === "done") {
+            finalData = evt;
+          } else if (evt.type === "error") {
+            throw new Error(evt.message || "phase 1 failed");
+          }
+          // S5-4 will render evt.type === "text" live here as the parse streams in.
         }
-        if (countdownTimer) clearInterval(countdownTimer);
-        window.location.href = `/r/${data.id}`;
+
+        if (!finalData) throw new Error("stream ended with no result");
+        renderChoices(finalData.session_id, inviteWord, finalData);
       } catch (err) {
-        if (countdownTimer) clearInterval(countdownTimer);
-        statusEl.textContent = "Something went wrong reaching the checker — please try again.";
+        showError("Something went wrong reaching the checker — please try again.");
         submitBtn.disabled = false;
         textarea.disabled = false;
-        inviteWordInput.disabled = false;
+        bubble.textContent = "one claim at a time";
       }
     });
   </script>
-
-  <p class="privacy-note">Results get a permanent, shareable link once the check completes.</p>
 </body>
 </html>
