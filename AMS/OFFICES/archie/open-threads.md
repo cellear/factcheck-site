@@ -20,6 +20,13 @@ Carry-forward items in this persona's lane that have not resolved yet.
 - ~~Prompt caching~~ — **decided ON 2026-08-31** (S3-7); cheaper even cold. Lila records it
   (corrections list in my Sprint 3 planning handoff).
 - ~~S3-6 per-IP rate limit~~ — **struck by Luke 2026-08-31**.
-- **Sprint 4 may fold into Sprint 3** if 3 goes cleanly.
+- ~~Sprint 4 may fold into Sprint 3~~ — **closed 2026-08-31**: Sprint 4 ran as its own sprint, accepted.
 - **Luke's deferred idea:** user picks the model, not limited to Anthropic. Logged in
   sprint-1.md; needs a different search mechanism. Scope when a sprint has room.
+- **S4-R pending** in Nadia's thread (go-ahead prompt handed to Luke 2026-09-01), reframed:
+  sprint retro, project continues.
+- **Mascot character + name** — Luke pondering; Sprint 5 ships with placeholder art, unnamed.
+- **Image input** — considered and deferred 2026-09-01; revisit for Sprint 6 (needs upload UI,
+  record-shape change, and a call on whether `/r/{id}` shows the image).
+- **Cost controls revisit** — punted 2026-09-01 (no auto-reload; Console balance is backstop);
+  reopen if the audience widens beyond the invited circle.

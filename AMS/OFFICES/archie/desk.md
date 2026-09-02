@@ -1,26 +1,27 @@
 # Archie's Desk
 
-**Last active:** 2026-08-31 (claude-fable-5) — Sprint 4 planning pass done; S3-1 live
+**Last active:** 2026-09-01 (claude-fable-5) — Sprint 5 planned; project extended past MVP
 
 ## Where things stand
 
-**Sprints 1 and 2 are closed and committed.** The site is live end to end at
-`factcheck-site.pages.dev` (six-minute hold confirmed; decision 14 decided). DOC and LEARNINGS
-current through S2-R.
+**Sprints 1–4 accepted.** Site live end to end at `factcheck-site.pages.dev`. S4-R (retro)
+pending in Nadia's thread — reframed as a sprint retro, NOT project-closing, since Luke is
+extending the project.
 
-**Sprint 3 ("It's safe to send to people") is planned and revised** — see
-`HANDOFF/handoff-2026-08-31-sprint-3-planning-archie.md`. Key calls this pass: S3-6 struck by
-Luke (spend already contained); **prompt caching decided ON** (S3-7 — cheaper even cold, 58%
-warm, meter must bill cache rates via S3-2); S3-4 struck as absorbed by S2-2/S2-6; S3-3's
-stale fallbacks line corrected; S3-8 added (Quinn demo runner, hands live run to Nadia).
+**Sprint 5 is planned** — `AMS/SPRINTS/sprint-5.md`, goal: "the site catches up to the
+skill." One architectural move: `/check` one-shot → two-phase session (parse/triage → user
+chooses → streamed investigation). Retires `frameClaim()`'s "never ask" wrapper. Plus design
+1b integration (mascot-at-desk, `INCOMING/Form design feedback/`), URL input via web_fetch,
+caps raised (search 5→25 env var, spend $20→$100). Reference for the firehose feel:
+`design/skill-reference/` (frames from Luke's skill recording + README).
 
-**Order:** Sandy S3-1 → Cody S3-2+S3-3+S3-7 → Sandy S3-5 → Quinn S3-8 → Nadia live demo.
-Sequential on purpose: four stories touch the same Worker.
+**Order:** Cody chains S5-1→S5-2→S5-3→S5-4 in one session → Quinn S5-5 → Nadia live demo →
+S5-R. Sandy not in this sprint (Luke: all coding to Cody).
 
 ## My next involvement
 
-- Sprint 4 fold-in decision after the Sprint 3 demo ("if 3 goes cleanly" can only be judged then).
-- Anything the demo throws back.
+- Anything the Sprint 5 demo throws back; Sprint 6 shaping (image input and mascot character
+  are the queued candidates).
 
 Standing rules: commit own work locally at session end; AGENTS NEVER PUSH; all persona
 communication routes through Luke; DOC/LEARNINGS written only by Lila.
