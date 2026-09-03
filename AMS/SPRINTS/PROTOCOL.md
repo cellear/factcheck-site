@@ -21,7 +21,10 @@ Each sprint file should include:
 - **Decisions made this sprint** — Optional; conventions or tradeoffs that bind future work
 - **Deferred to later sprints** — Optional; what was pulled out of scope
 
-Stories use checkbox status in their heading (`[ ]` → `[x]`). Acceptance criteria are checklists.
+Stories use a bracket state marker in their heading: `[ ]` open, `[x]` done, `[-]` struck, `[!]`
+blocked. For struck or blocked stories, the reason and attribution go on the first line of the
+story body (`**STRUCK** — reason (who, date).` / `**BLOCKED** — reason (who, date).`), not in the
+heading. Acceptance criteria are checklists.
 
 A starter file lives in `agent-scrum/template/SPRINTS/sprint-1.md`.
 
@@ -87,3 +90,5 @@ Lifted from [agent-scrum](https://github.com/cellear/agent-scrum) into AMS as an
 
 - **1.0** (2026-04-25) — Initial extraction from theme_machine, ddev-xdebug-tui, ddev-drush-tui
 - **1.1** (2026-08-23) — Optional under AMS CONFIG; EPICS gated by `epics: on`; LEARNINGS/DOC no longer assumed
+- **1.2** (2026-09-02) — Story heading state vocabulary grows from two to four (`[-]` struck,
+  `[!]` blocked join `[ ]`/`[x]`); reason and attribution move to the story body's first line

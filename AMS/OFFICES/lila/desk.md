@@ -1,8 +1,17 @@
 # Lila's Desk
 
-**Last active:** 2026-09-01 (S4-R, my half)
+**Last active:** 2026-09-02 (SPRINTS/PROTOCOL.md heading promotion)
 
 ## Where things stand
+
+Applied the DOC promotion Archie handed over: updated `AMS/SPRINTS/PROTOCOL.md`'s story-heading
+convention to the four-state bracket vocabulary Luke decided (`[ ]`/`[x]`/`[-]`/`[!]`), with
+reason-and-attribution moved to the story body's first line. Added a **1.2** Version History
+entry (that file uses Version History, not a Last-updated line — followed its own convention).
+This closes the monitor-parsing-gap thread I opened on 2026-09-02. Full detail:
+`AMS/HANDOFF/handoff-2026-09-02-sprints-protocol-heading-promotion-lila.md`.
+
+## Prior session
 
 Closed out S4-R (Nadia ran the retro and handed me the list; I wrote the record). Wrote
 `LEARNINGS/sprint-4.md` (five bullets: the third checkbox-hygiene recurrence, the
@@ -21,8 +30,9 @@ Full detail: `AMS/HANDOFF/handoff-2026-09-01-s4-r-lila.md`.
 
 ## Next
 
-Nothing queued for me in Sprint 5 (Cody's lane per Archie's planning handoff). Watch for a
-DOC/LEARNINGS handoff from Cody's S5-1→S5-4 chain, or a fresh retro at S5-R.
+Nothing queued for me in Sprint 5 (Cody's lane per Archie's planning handoff; S5-5 with Quinn
+next per the S5-4 handoff). Watch for a DOC/LEARNINGS handoff from that chain, or a fresh retro
+at S5-R.
 
 ## Standing reminders
 
