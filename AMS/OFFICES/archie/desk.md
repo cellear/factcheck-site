@@ -1,6 +1,9 @@
 # Archie's Desk
 
-**Last active:** 2026-09-01 (claude-fable-5) — Sprint 5 planned; project extended past MVP
+**Last active:** 2026-09-02 (claude-fable-5) — decided the struck/blocked heading convention
+with Luke: story headings always end in a bracket state (`[ ]` / `[x]` / `[-]` struck / `[!]`
+blocked), reason moves to the first body line. Retrofitted S3-4, S3-6, S4-3; PROTOCOL.md
+promotion handed to Lila.
 
 ## Where things stand
 

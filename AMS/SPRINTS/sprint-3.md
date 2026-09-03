@@ -49,7 +49,9 @@
 
 ---
 
-### S3-4 · Search-tool error detection · **STRUCK — absorbed by S2-2/S2-6** (Archie, 2026-08-31)
+### S3-4 · Search-tool error detection · [-]
+
+**STRUCK** — absorbed by S2-2/S2-6 (Archie, 2026-08-31).
 
 This story was written before the Sprint 1 spike and Sprint 2 build, and both of its premises
 are stale: `max_uses: 0` is a request-validation 400 (not a forceable error), and
@@ -76,7 +78,9 @@ remains to build.
 
 ---
 
-### S3-6 · Per-IP rate limit · **STRUCK by Luke, 2026-08-31**
+### S3-6 · Per-IP rate limit · [-]
+
+**STRUCK** by Luke, 2026-08-31.
 
 Luke: spend is already contained — the invite word gates every call, the hard cap bounds the
 month, and each check requires a deliberate manual submission per load. A per-IP counter adds

@@ -43,7 +43,9 @@
 
 ---
 
-### S4-3 · Custom domain · **BLOCKED — using .dev domain for now** (Luke, 2026-08-31)
+### S4-3 · Custom domain · [!]
+
+**BLOCKED** — using .dev domain for now (Luke, 2026-08-31).
 
 **Owner:** Sandy · **Model:** `claude-haiku-4-5` · **Size:** s · **Depends on:** S2-1
 

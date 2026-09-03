@@ -30,3 +30,7 @@ Carry-forward items in this persona's lane that have not resolved yet.
   record-shape change, and a call on whether `/r/{id}` shows the image).
 - **Cost controls revisit** — punted 2026-09-01 (no auto-reload; Console balance is backstop);
   reopen if the audience widens beyond the invited circle.
+- ~~Struck/blocked headings invisible to ams-agent-monitor~~ — **decided with Luke 2026-09-02**:
+  story headings always end in a bracket state — `[ ]` open, `[x]` done, `[-]` struck, `[!]`
+  blocked — reason/attribution moves to the first body line. S3-4, S3-6, S4-3 retrofitted;
+  PROTOCOL.md promotion handed to Lila. Monitor-side rendering of `[-]`/`[!]` is with its author.
