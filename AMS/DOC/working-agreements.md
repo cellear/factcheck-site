@@ -43,6 +43,36 @@ commits their own story's work locally at the end of their session, without wait
 This does not change who pushes — "Agents never push" above is unchanged; Luke remains the only
 one who pushes.
 
+## Commit subject lines: story ID when there's one, agent name in parens, no dates
+
+Luke's convention, stated 2026-09-02, after `Handoff for Archie: monitor's struck/blocked
+heading parsing gap` read as an internal AMS memo rather than a description of a change, and
+after noticing that trailing dates in parens (`(Cody, 2026-08-26)`) just repeat what git already
+records.
+
+- **If the commit is part of a story or sprint, lead the subject with that identifier** —
+  `S2-7: prompt-caching measurement`, `S4-R: LEARNINGS/sprint-4.md, DOC promotions, sprint
+  close`. Short, and the sprint files that give it meaning are in the repo.
+- **If it isn't tied to a story, just write an informative subject.** Describe what the commit
+  does, not who it's addressed to — `Handoff for Archie: ...` is the pattern to avoid. A
+  sprint-level commit with no single story (`Sprint 4 accepted`) doesn't need a synthetic tag;
+  the sentence itself already says which sprint.
+- **End the subject with the acting persona in parentheses** — `(Cody)`, `(Lila)`. Every
+  commit's git author is Luke, so the persona name in parens is the only place that says who
+  actually did the work.
+- **No date in parens.** Git already records the commit date.
+- Everything else is unchanged: `AGENT.md`'s multi-line body requirement, and the
+  `Co-Authored-By` / `Claude-Session` trailers.
+
+Examples:
+
+    S2-7: prompt-caching measurement -- 58% cheaper with a warm cache (Cody)
+    Flag monitor dashboard cache bug and sprint heading gap for Archie (Lila)
+    Sprint 4 accepted (Nadia)
+
+**Not retroactive.** This governs commits going forward; existing history on `main` is not
+rewritten to match.
+
 ## A sprint is accepted by demo, or it isn't over
 
 Luke's definition, stated 2026-08-25:
@@ -150,5 +180,5 @@ was the only one S4-R's retro could verify directly against the record.
 
 ---
 
-Last updated: 2026-09-01 by Lila (claude-sonnet-5) — added the checkbox-re-walk-at-acceptance and
-echo-mission-summary-into-handoff conventions, via the S4-R retro
+Last updated: 2026-09-02 by Lila (claude-sonnet-5) — added the commit-subject-line convention
+(story ID when there's one, agent name in parens, no dates), from Luke directly
